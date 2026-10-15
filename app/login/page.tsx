@@ -1,7 +1,7 @@
 "use client";
 import {useState, useEffect} from "react";
 import {useRouter} from "next/navigation";
-import {Wrench, Share2, Building2, User, Phone, FileCheck, MapPin, KeyRound} from "lucide-react";
+import {Wrench, Share2, LogOut, AlertCircle} from "lucide-react";
 import {H} from "@/components/ui";
 import {BRANDS} from "@/lib/data";
 
@@ -9,29 +9,104 @@ export default function Login(){
   const router = useRouter();
   const [tab, setTab] = useState<"workshop"|"marketer">("workshop");
   const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [license, setLicense] = useState("");
+  const [city, setCity] = useState("");
   const [spec, setSpec] = useState(BRANDS[0] || "Mercedes-Benz");
+  const [refCode, setRefCode] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [currentUser, setCurrentUser] = useState<{role: "workshop"|"marketer"; name: string} | null>(null);
 
   useEffect(()=>{
-    const savedRole = localStorage.getItem("euro_role") as "workshop"|"marketer";
-    if(savedRole === "workshop" || savedRole === "marketer") setTab(savedRole);
+    fetch("/api/auth")
+      .then(r => r.json())
+      .then(d => {
+        if(d?.user){
+          setCurrentUser(d.user);
+          setTab(d.user.role);
+        }
+      })
+      .catch(()=>{});
   },[]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    localStorage.setItem("euro_role", tab);
-    localStorage.setItem("euro_name", name);
-    router.push(tab === "workshop" ? "/workshop" : "/marketer");
+    setError("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          role: tab,
+          name: name.trim(),
+          phone: phone.trim(),
+          password,
+          license: tab === "workshop" ? license.trim() : undefined,
+          city: tab === "workshop" ? city.trim() : undefined,
+          spec: tab === "workshop" ? spec : undefined,
+          refCode: tab === "workshop" ? refCode.trim() : undefined,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "فشل تسجيل الدخول، تأكد من البيانات");
+        setLoading(false);
+        return;
+      }
+
+      router.push(tab === "workshop" ? "/workshop" : "/marketer");
+      router.refresh();
+    } catch {
+      setError("حدث خطأ في الاتصال بالخادم");
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth", { method: "DELETE" });
+    } finally {
+      setCurrentUser(null);
+      setName("");
+      setPhone("");
+      setPassword("");
+      router.refresh();
+    }
   };
 
   return(<>
     <H t="تسجيل الدخول والحسابات" s="اختر نوع حسابك للوصول إلى الخدمات المخصصة لك"/>
 
     <div className="mx-auto max-w-xl">
+      {currentUser && (
+        <div className="card mb-6 flex items-center justify-between border-gold/40 bg-gold/5">
+          <div>
+            <p className="text-xs text-zinc-400">مسجّل الدخول حالياً كـ:</p>
+            <p className="font-bold text-gold">
+              {currentUser.name} ({currentUser.role === "workshop" ? "حساب ورشة / شركة" : "حساب عميل / مسوّق"})
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-400 transition hover:bg-red-500/20"
+          >
+            <LogOut size={14}/>
+            تسجيل الخروج
+          </button>
+        </div>
+      )}
+
       {/* أزرار اختيار نوع الحساب */}
       <div className="mb-6 grid grid-cols-2 gap-3">
         <button
           type="button"
-          onClick={()=>{setTab("workshop"); setName("");}}
+          onClick={()=>{setTab("workshop"); setError("");}}
           className={`flex flex-col items-center gap-2 rounded-2xl border p-4 transition-all ${
             tab==="workshop"
               ? "border-gold bg-gold/10 text-gold shadow-sm"
@@ -45,7 +120,7 @@ export default function Login(){
 
         <button
           type="button"
-          onClick={()=>{setTab("marketer"); setName("");}}
+          onClick={()=>{setTab("marketer"); setError("");}}
           className={`flex flex-col items-center gap-2 rounded-2xl border p-4 transition-all ${
             tab==="marketer"
               ? "border-gold bg-gold/10 text-gold shadow-sm"
@@ -58,8 +133,15 @@ export default function Login(){
         </button>
       </div>
 
-      {/* فورم التسجيل حسب الاختيار */}
+      {/* فورم التسجيل والدخول */}
       <form onSubmit={handleSubmit} className="card grid gap-4">
+        {error && (
+          <div className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400">
+            <AlertCircle size={16} className="shrink-0"/>
+            <span>{error}</span>
+          </div>
+        )}
+
         {tab === "workshop" ? (
           <>
             <div className="border-b border-zinc-800 pb-3">
@@ -67,24 +149,48 @@ export default function Login(){
               <p className="text-xs text-zinc-500">تُستخدم لتفعيل سقف الدين الآجل ونظام المراتب</p>
             </div>
 
-            <div className=" relative">
-              <input 
-                className="inp w-full" 
-                placeholder="اسم الورشة أو الشركة (مثال: ورشة الأمانة)" 
-                value={name}
-                onChange={e=>setName(e.target.value)}
+            <input
+              className="inp w-full"
+              placeholder="اسم الورشة أو الشركة (مثال: ورشة الأمانة)"
+              value={name}
+              onChange={e=>setName(e.target.value)}
+              required
+            />
+
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <input
+                className="inp"
+                dir="ltr"
+                placeholder="رقم الموبايل (09XXXXXXXX)"
+                value={phone}
+                onChange={e=>setPhone(e.target.value)}
+                required
+              />
+              <input
+                className="inp"
+                type="password"
+                placeholder="كلمة المرور"
+                value={password}
+                onChange={e=>setPassword(e.target.value)}
                 required
               />
             </div>
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <input className="inp" placeholder="اسم المسؤول الثلاثي" required/>
-              <input className="inp" dir="ltr" placeholder="رقم الموبايل (09XXXXXXXX)" required/>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <input className="inp" placeholder="رقم السجل التجاري / الصناعي أو الترخيص" required/>
-              <input className="inp" placeholder="المدينة والمنطقة الصناعية" required/>
+              <input
+                className="inp"
+                placeholder="رقم السجل التجاري / الصناعي أو الترخيص"
+                value={license}
+                onChange={e=>setLicense(e.target.value)}
+                required
+              />
+              <input
+                className="inp"
+                placeholder="المدينة والمنطقة الصناعية"
+                value={city}
+                onChange={e=>setCity(e.target.value)}
+                required
+              />
             </div>
 
             <div>
@@ -105,7 +211,12 @@ export default function Login(){
               </div>
             </div>
 
-            <input className="inp" placeholder="كود المسوّق الذي دعاك (اختياري)"/>
+            <input
+              className="inp"
+              placeholder="كود المسوّق الذي دعاك (اختياري)"
+              value={refCode}
+              onChange={e=>setRefCode(e.target.value)}
+            />
           </>
         ) : (
           <>
@@ -114,20 +225,36 @@ export default function Login(){
               <p className="text-xs text-zinc-500">حساب موحد للشراء المباشر وكسب عمولات دعوة الورشات</p>
             </div>
 
-            <input 
-              className="inp" 
-              placeholder="الاسم الكامل" 
+            <input
+              className="inp"
+              placeholder="الاسم الكامل"
               value={name}
               onChange={e=>setName(e.target.value)}
               required
             />
-            <input className="inp" dir="ltr" placeholder="رقم الموبايل (09XXXXXXXX)" required/>
-            <input className="inp" type="password" placeholder="كلمة المرور" required/>
+            <input
+              className="inp"
+              dir="ltr"
+              placeholder="رقم الموبايل (09XXXXXXXX)"
+              value={phone}
+              onChange={e=>setPhone(e.target.value)}
+              required
+            />
+            <input
+              className="inp"
+              type="password"
+              placeholder="كلمة المرور"
+              value={password}
+              onChange={e=>setPassword(e.target.value)}
+              required
+            />
           </>
         )}
 
-        <button type="submit" className="btn mt-2">
-          {tab === "workshop" ? "دخول / تفعيل حساب الورشة" : "دخول / تفعيل حساب العميل والمسوّق"}
+        <button type="submit" disabled={loading} className="btn mt-2 disabled:opacity-50">
+          {loading
+            ? "جاري التحقق..."
+            : (tab === "workshop" ? "دخول / تفعيل حساب الورشة" : "دخول / تفعيل حساب العميل والمسوّق")}
         </button>
       </form>
     </div>
