@@ -1,45 +1,33 @@
 "use client";
 import {useState, useEffect} from "react";
 import Link from "next/link";
-import {usePathname, useRouter} from "next/navigation";
+import {usePathname} from "next/navigation";
 import {useTheme} from "next-themes";
 import {Store,ShoppingCart,PackageSearch,Wrench,Share2,Sun,Moon,UserCheck} from "lucide-react";
 import {useCart} from "./cart";
 
 export default function Shell({children}:{children:React.ReactNode}){
   const p = usePathname(),
-        router = useRouter(),
         {theme,setTheme} = useTheme(),
         {count} = useCart(),
-        [role,setRole] = useState<"workshop"|"marketer">("workshop"),
-        [userName,setUserName] = useState<string>(""),
-        [ready,setReady] = useState(false);
+        [user,setUser] = useState<{role:"workshop"|"marketer"; name:string} | null>(null);
 
   useEffect(()=>{
-    const savedRole = (localStorage.getItem("euro_role") as "workshop"|"marketer") || "workshop";
-    const savedName = localStorage.getItem("euro_name") || "";
-    setRole(savedRole);
-    setUserName(savedName);
-
-    // حماية المسارات فعلياً من الوصول المباشر عبر الرابط
-    if (savedRole === "marketer" && p.startsWith("/workshop")) {
-      router.replace("/marketer");
-      return;
-    }
-    if (savedRole === "workshop" && p.startsWith("/marketer")) {
-      router.replace("/workshop");
-      return;
-    }
-    setReady(true);
-  },[p, router]);
+    fetch("/api/auth")
+      .then(r => r.json())
+      .then(d => setUser(d?.user || null))
+      .catch(()=> setUser(null));
+  },[p]);
 
   const NAV = [
     ["/","الكتالوج",Store],
     ["/cart","السلة",ShoppingCart],
     ["/special","طلب خاص",PackageSearch],
-    ...(role==="workshop" 
-      ? [["/workshop","الورشة",Wrench] as const] 
-      : [["/marketer","المسوّق والعميل",Share2] as const]
+    ...(user?.role === "workshop"
+      ? [["/workshop","الورشة",Wrench] as const]
+      : user?.role === "marketer"
+      ? [["/marketer","المسوّق والعميل",Share2] as const]
+      : [["/login","حسابي",UserCheck] as const]
     )
   ] as const;
 
@@ -74,14 +62,18 @@ export default function Shell({children}:{children:React.ReactNode}){
       <main className="min-w-0 flex-1 p-4 pb-24 md:p-8">
         <div className="mb-4 flex items-center justify-between gap-2">
           <span className="text-2xl font-black text-gold md:invisible">اليورو</span>
-          
+
           <div className="flex items-center gap-2 ms-auto">
-            <Link 
-              href="/login" 
+            <Link
+              href="/login"
               className="flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-xs font-medium text-zinc-300 transition hover:border-gold hover:text-gold"
             >
               <UserCheck size={15} className="text-gold"/>
-              <span>{userName ? userName : (role==="workshop" ? "حساب ورشة" : "حساب عميل/مسوّق")}</span>
+              <span>
+                {user
+                  ? `${user.name} (${user.role==="workshop" ? "ورشة" : "عميل/مسوّق"})`
+                  : "تسجيل الدخول"}
+              </span>
             </Link>
 
             <button
@@ -94,7 +86,7 @@ export default function Shell({children}:{children:React.ReactNode}){
             </button>
           </div>
         </div>
-        {ready ? children : null}
+        {children}
       </main>
     </div>
   );
