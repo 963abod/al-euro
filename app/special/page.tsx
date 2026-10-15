@@ -8,6 +8,7 @@ export default function Special(){
   const [img, setImg] = useState("");
   const [ok, setOk] = useState(false);
   const [selectedBrand, setSelectedBrand] = useState(BRANDS[0] || "Mercedes-Benz");
+  const [otherBrand, setOtherBrand] = useState("");
   const [partName, setPartName] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -22,15 +23,16 @@ export default function Special(){
     <CheckCircle2 className="mx-auto mb-3 text-gold" size={48}/>
     <h2 className="text-xl font-bold">وصلنا طلبك</h2>
     <p className="mt-1 text-sm text-zinc-500">سنؤمّن القطعة ونرسل لك السعر.</p>
-    <button className="btn mt-4" onClick={()=>{setOk(false); setImg(""); setPartName(""); setShowSuggestions(false);}}>طلب جديد</button>
+    <button className="btn mt-4" onClick={()=>{setOk(false); setImg(""); setPartName(""); setOtherBrand(""); setShowSuggestions(false); setSelectedBrand(BRANDS[0] || "Mercedes-Benz");}}>طلب جديد</button>
   </div>;
 
   return(<>
     <H t="الطلبات الخاصة" s="القطعة غير متوفرة؟ نؤمّنها لك ونسعّرها ونسلّمها، حتى من خارج البلد"/>
 
     <form onSubmit={e=>{e.preventDefault(); setShowSuggestions(false); setOk(true)}} className="card mx-auto grid max-w-2xl gap-5">
+      {/* اختيار الماركة مع خيار أخرى */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-        {BRANDS.map(b => {
+        {[...BRANDS, "أخرى"].map(b => {
           const isSelected = selectedBrand === b;
           return (
             <button
@@ -49,6 +51,17 @@ export default function Special(){
         })}
       </div>
 
+      {selectedBrand === "أخرى" && (
+        <input
+          className="inp"
+          placeholder="اكتب نوع السيارة (مثال: بورش، سكودا...)"
+          value={otherBrand}
+          onChange={e=>setOtherBrand(e.target.value)}
+          required
+        />
+      )}
+
+      {/* حقل اسم القطعة مع الاقتراحات الفورية */}
       <div className="relative">
         <input
           className="inp w-full"
