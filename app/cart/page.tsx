@@ -19,6 +19,8 @@ export default function Cart(){
   const [pay,setPay]=useState<string>("cod");
   const [file,setFile]=useState("");
   const [done,setDone]=useState("");
+  const [submitting,setSubmitting]=useState(false);
+  const [err,setErr]=useState("");
 
   useEffect(()=>{
     let active=true;
@@ -85,15 +87,49 @@ export default function Cart(){
             ))}
             {pay==="sham"&&<label className="btn2 w-full cursor-pointer"><Upload size={16}/>{file||"ارفع إشعار التحويل"}<input type="file" hidden accept="image/*" onChange={e=>setFile(e.target.files?.[0]?.name||"")}/></label>}
             {pay==="debt"&&canPayByDebt&&<div className="flex gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-600 dark:text-amber-400"><AlertTriangle size={18} className="shrink-0"/><p>عدّاد 30 يومًا يبدأ من أول قطعة دين. عند تجاوزه يتوقف السحب الآجل حتى التسديد. الكاش باك والعمولة يُصرفان بعد التسديد.<br/>المتاح من سقفك: <b>{usd(1200)}</b></p></div>}
+            {err && (
+              <p className="rounded-xl border border-red-500/30 bg-red-500/10 p-2.5 text-xs text-red-400">
+                {err}
+              </p>
+            )}
+
             <button
-              className="btn w-full"
-              disabled={!sessionLoaded || (pay==="sham"&&!file) || (pay==="debt"&&!canPayByDebt)}
-              onClick={()=>{
-                if(pay==="debt"&&!canPayByDebt){setPay("cod");return;}
-                setDone(pay);
-                clear();
+              className="btn w-full disabled:opacity-50"
+              disabled={
+                !sessionLoaded ||
+                submitting ||
+                (pay==="sham"&&!file) ||
+                (pay==="debt"&&!canPayByDebt)
+              }
+              onClick={async ()=>{
+                setErr("");
+                if(pay==="debt"&&!canPayByDebt){
+                  setPay("cod");
+                  return;
+                }
+                setSubmitting(true);
+                try {
+                  const res = await fetch("/api/orders", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ items, pay, file }),
+                  });
+                  const data = await res.json();
+                  if (!res.ok) {
+                    setErr(data.error || "تعذر إتمام الطلب");
+                    return;
+                  }
+                  setDone(pay);
+                  clear();
+                } catch {
+                  setErr("حدث خطأ في الاتصال بالخادم");
+                } finally {
+                  setSubmitting(false);
+                }
               }}
-            >تأكيد الطلب · {usd(total)}</button>
+            >
+              {submitting ? "جارٍ تأكيد الطلب..." : `تأكيد الطلب · ${usd(total)}`}
+            </button>
             {sessionLoaded && role!=="workshop" && <p className="text-center text-xs text-zinc-500">الدفع بالدين متاح حصريًا لحسابات الورشات.</p>}
           </div>
         </div>
