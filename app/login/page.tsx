@@ -13,7 +13,11 @@ export default function Login(){
   const [password, setPassword] = useState("");
   const [license, setLicense] = useState("");
   const [city, setCity] = useState("");
-  const [spec, setSpec] = useState(BRANDS[0] || "Mercedes-Benz");
+
+  // تحويل اختصاص السيارات إلى مصفوفة (اختيار متعدد) مع دعم "أخرى"
+  const [selectedSpecs, setSelectedSpecs] = useState<string[]>([BRANDS[0] || "Mercedes-Benz"]);
+  const [otherSpec, setOtherSpec] = useState("");
+
   const [refCode, setRefCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -31,10 +35,24 @@ export default function Login(){
       .catch(()=>{});
   },[]);
 
+  const toggleSpec = (b: string) => {
+    if (selectedSpecs.includes(b)) {
+      if (selectedSpecs.length > 1) {
+        setSelectedSpecs(selectedSpecs.filter(item => item !== b));
+      }
+    } else {
+      setSelectedSpecs([...selectedSpecs, b]);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
+
+    const finalSpecs = selectedSpecs.includes("أخرى") && otherSpec.trim()
+      ? [...selectedSpecs.filter(s => s !== "أخرى"), `أخرى: ${otherSpec.trim()}`]
+      : selectedSpecs;
 
     try {
       const res = await fetch("/api/auth", {
@@ -47,7 +65,7 @@ export default function Login(){
           password,
           license: tab === "workshop" ? license.trim() : undefined,
           city: tab === "workshop" ? city.trim() : undefined,
-          spec: tab === "workshop" ? spec : undefined,
+          spec: tab === "workshop" ? finalSpecs.join(", ") : undefined,
           refCode: tab === "workshop" ? refCode.trim() : undefined,
         }),
       });
@@ -68,15 +86,9 @@ export default function Login(){
   };
 
   const handleLogout = async () => {
-    try {
-      await fetch("/api/auth", { method: "DELETE" });
-    } finally {
-      setCurrentUser(null);
-      setName("");
-      setPhone("");
-      setPassword("");
-      router.refresh();
-    }
+    await fetch("/api/auth", { method: "DELETE" });
+    setCurrentUser(null);
+    router.refresh();
   };
 
   return(<>
@@ -194,21 +206,34 @@ export default function Login(){
             </div>
 
             <div>
-              <label className="mb-2 block text-xs text-zinc-400">اختصاص السيارات الرئيسي:</label>
+              <label className="mb-2 block text-xs text-zinc-400">اختصاص السيارات (يمكن اختيار أكثر من ماركة):</label>
               <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                {BRANDS.map(b => (
-                  <button
-                    type="button"
-                    key={b}
-                    onClick={()=>setSpec(b)}
-                    className={`rounded-xl border p-2 text-xs font-medium transition ${
-                      spec===b ? "border-gold bg-gold/10 text-gold" : "border-zinc-800 text-zinc-400"
-                    }`}
-                  >
-                    {b}
-                  </button>
-                ))}
+                {[...BRANDS, "أخرى"].map(b => {
+                  const isSelected = selectedSpecs.includes(b);
+                  return (
+                    <button
+                      type="button"
+                      key={b}
+                      onClick={()=>toggleSpec(b)}
+                      className={`rounded-xl border p-2 text-xs font-medium transition ${
+                        isSelected ? "border-gold bg-gold/10 text-gold" : "border-zinc-800 text-zinc-400"
+                      }`}
+                    >
+                      {b} {isSelected && "✓"}
+                    </button>
+                  );
+                })}
               </div>
+
+              {selectedSpecs.includes("أخرى") && (
+                <input
+                  className="inp mt-3"
+                  placeholder="اكتب نوع السيارات الأخرى..."
+                  value={otherSpec}
+                  onChange={e=>setOtherSpec(e.target.value)}
+                  required
+                />
+              )}
             </div>
 
             <input
