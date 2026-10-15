@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-const SECRET =
-  process.env.AUTH_SECRET ||
-  (process.env.NODE_ENV !== "production"
-    ? "al-euro-local-dev-secret-change-me"
-    : "");
+const SECRET = process.env.AUTH_SECRET;
 
 type Session = {
   role: "workshop" | "marketer";
@@ -47,10 +43,13 @@ async function verifySession(token?: string): Promise<Session | null> {
       ["verify"]
     );
 
+    // Create an explicit ArrayBuffer to satisfy strict Web Crypto TypeScript types.
+    const signatureBuffer = Uint8Array.from(signatureBytes).buffer;
+
     const isValid = await crypto.subtle.verify(
       "HMAC",
       key,
-      signatureBytes,
+      signatureBuffer,
       encoder.encode(payloadStr)
     );
 
@@ -66,6 +65,7 @@ async function verifySession(token?: string): Promise<Session | null> {
       typeof payload.iat !== "number" ||
       !Number.isFinite(payload.iat) ||
       now - payload.iat > 7 * 24 * 60 * 60 * 1000 ||
+      payload.iat <= 0 ||
       payload.iat > now + 60_000
     ) {
       return null;
@@ -85,13 +85,16 @@ async function verifySession(token?: string): Promise<Session | null> {
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // منع الوصول إلى أي مسار إدارة قديم.
   if (pathname === "/admin" || pathname.startsWith("/admin/")) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
-  if (pathname.startsWith("/workshop/") || pathname === "/workshop" ||
-      pathname.startsWith("/marketer/") || pathname === "/marketer") {
+  if (
+    pathname === "/workshop" ||
+    pathname.startsWith("/workshop/") ||
+    pathname === "/marketer" ||
+    pathname.startsWith("/marketer/")
+  ) {
     const token = req.cookies.get("euro_session")?.value;
     const session = await verifySession(token);
 
@@ -101,13 +104,17 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    if ((pathname === "/workshop" || pathname.startsWith("/workshop/")) &&
-        session.role !== "workshop") {
+    if (
+      (pathname === "/workshop" || pathname.startsWith("/workshop/")) &&
+      session.role !== "workshop"
+    ) {
       return NextResponse.redirect(new URL("/marketer", req.url));
     }
 
-    if ((pathname === "/marketer" || pathname.startsWith("/marketer/")) &&
-        session.role !== "marketer") {
+    if (
+      (pathname === "/marketer" || pathname.startsWith("/marketer/")) &&
+      session.role !== "marketer"
+    ) {
       return NextResponse.redirect(new URL("/workshop", req.url));
     }
   }
@@ -116,5 +123,12 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/workshop", "/workshop/:path*", "/marketer", "/marketer/:path*", "/admin", "/admin/:path*"],
+  matcher: [
+    "/workshop",
+    "/workshop/:path*",
+    "/marketer",
+    "/marketer/:path*",
+    "/admin",
+    "/admin/:path*",
+  ],
 };
