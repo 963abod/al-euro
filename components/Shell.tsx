@@ -1,24 +1,37 @@
 "use client";
 import {useState, useEffect} from "react";
 import Link from "next/link";
-import {usePathname} from "next/navigation";
+import {usePathname, useRouter} from "next/navigation";
 import {useTheme} from "next-themes";
 import {Store,ShoppingCart,PackageSearch,Wrench,Share2,Sun,Moon,UserCheck} from "lucide-react";
 import {useCart} from "./cart";
 
 export default function Shell({children}:{children:React.ReactNode}){
-  const p=usePathname(),
-        {theme,setTheme}=useTheme(),
-        {count}=useCart(),
-        [role,setRole]=useState<"workshop"|"marketer">("workshop"),
-        [userName,setUserName]=useState<string>("");
+  const p = usePathname(),
+        router = useRouter(),
+        {theme,setTheme} = useTheme(),
+        {count} = useCart(),
+        [role,setRole] = useState<"workshop"|"marketer">("workshop"),
+        [userName,setUserName] = useState<string>(""),
+        [ready,setReady] = useState(false);
 
   useEffect(()=>{
-    const savedRole = localStorage.getItem("euro_role") as "workshop"|"marketer";
+    const savedRole = (localStorage.getItem("euro_role") as "workshop"|"marketer") || "workshop";
     const savedName = localStorage.getItem("euro_name") || "";
-    if(savedRole==="workshop" || savedRole==="marketer") setRole(savedRole);
+    setRole(savedRole);
     setUserName(savedName);
-  },[p]);
+
+    // حماية المسارات فعلياً من الوصول المباشر عبر الرابط
+    if (savedRole === "marketer" && p.startsWith("/workshop")) {
+      router.replace("/marketer");
+      return;
+    }
+    if (savedRole === "workshop" && p.startsWith("/marketer")) {
+      router.replace("/workshop");
+      return;
+    }
+    setReady(true);
+  },[p, router]);
 
   const NAV = [
     ["/","الكتالوج",Store],
@@ -62,7 +75,7 @@ export default function Shell({children}:{children:React.ReactNode}){
         <div className="mb-4 flex items-center justify-between gap-2">
           <span className="text-2xl font-black text-gold md:invisible">اليورو</span>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 ms-auto">
             <Link 
               href="/login" 
               className="flex items-center gap-1.5 rounded-xl border border-zinc-800 bg-zinc-900/60 px-3 py-2 text-xs font-medium text-zinc-300 transition hover:border-gold hover:text-gold"
@@ -81,7 +94,7 @@ export default function Shell({children}:{children:React.ReactNode}){
             </button>
           </div>
         </div>
-        {children}
+        {ready ? children : null}
       </main>
     </div>
   );
