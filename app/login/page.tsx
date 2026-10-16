@@ -14,7 +14,7 @@ export default function Login(){
   const [license, setLicense] = useState("");
   const [city, setCity] = useState("");
 
-  // تحويل اختصاص السيارات إلى مصفوفة (اختيار متعدد) مع دعم "أخرى"
+  // اختيار عدة ماركات مع دعم خيار أخرى
   const [selectedSpecs, setSelectedSpecs] = useState<string[]>([BRANDS[0] || "Mercedes-Benz"]);
   const [otherSpec, setOtherSpec] = useState("");
 
@@ -96,17 +96,17 @@ export default function Login(){
 
     <div className="mx-auto max-w-xl">
       {currentUser && (
-        <div className="card mb-6 flex items-center justify-between border-gold/40 bg-gold/5">
+        <div className="mb-6 flex items-center justify-between rounded-[24px] border border-[#0A84FF]/30 bg-gradient-to-b from-[#0A84FF]/[0.12] to-white/[0.03] p-4 backdrop-blur-2xl saturate-150 shadow-[0_10px_32px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.25)] transition-all duration-300">
           <div>
-            <p className="text-xs text-zinc-400">مسجّل الدخول حالياً كـ:</p>
-            <p className="font-bold text-gold">
+            <p className="text-xs text-white/45">مسجّل الدخول حالياً كـ:</p>
+            <p className="font-semibold tracking-tight text-white">
               {currentUser.name} ({currentUser.role === "workshop" ? "حساب ورشة / شركة" : "حساب عميل / مسوّق"})
             </p>
           </div>
           <button
             type="button"
             onClick={handleLogout}
-            className="flex items-center gap-1.5 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs font-medium text-red-400 transition hover:bg-red-500/20"
+            className="flex items-center gap-1.5 rounded-full border border-[#FF453A]/40 bg-[#FF453A]/20 px-3 py-2 text-xs font-medium text-[#FF6961] shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] transition-all hover:bg-[#FF453A]/30 active:scale-[0.97]"
           >
             <LogOut size={14}/>
             تسجيل الخروج
@@ -114,41 +114,39 @@ export default function Login(){
         </div>
       )}
 
-      {/* أزرار اختيار نوع الحساب */}
-      <div className="mb-6 grid grid-cols-2 gap-3">
+      <div className="mb-6 grid grid-cols-2 gap-1.5 rounded-2xl border border-white/[0.08] bg-black/40 p-1.5 backdrop-blur-xl shadow-inner">
         <button
           type="button"
           onClick={()=>{setTab("workshop"); setError("");}}
-          className={`flex flex-col items-center gap-2 rounded-2xl border p-4 transition-all ${
+          className={`flex flex-col items-center gap-2 rounded-xl border p-4 transition-all ${
             tab==="workshop"
-              ? "border-gold bg-gold/10 text-gold shadow-sm"
-              : "border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700"
+              ? "border-white/[0.22] bg-white/[0.15] text-white backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.3)]"
+              : "border-transparent text-white/60 hover:bg-white/[0.05] hover:text-white"
           }`}
         >
           <Wrench size={24}/>
-          <div className="text-sm font-bold">حساب ورشة / شركة</div>
+          <div className="text-sm font-semibold">حساب ورشة / شركة</div>
           <span className="text-[11px] opacity-75">شراء آجل، دفتر ديون، كاش باك</span>
         </button>
 
         <button
           type="button"
           onClick={()=>{setTab("marketer"); setError("");}}
-          className={`flex flex-col items-center gap-2 rounded-2xl border p-4 transition-all ${
+          className={`flex flex-col items-center gap-2 rounded-xl border p-4 transition-all ${
             tab==="marketer"
-              ? "border-gold bg-gold/10 text-gold shadow-sm"
-              : "border-zinc-800 bg-zinc-900/40 text-zinc-400 hover:border-zinc-700"
+              ? "border-white/[0.22] bg-white/[0.15] text-white backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.3)]"
+              : "border-transparent text-white/60 hover:bg-white/[0.05] hover:text-white"
           }`}
         >
           <Share2 size={24}/>
-          <div className="text-sm font-bold">حساب عميل / مسوّق</div>
+          <div className="text-sm font-semibold">حساب عميل / مسوّق</div>
           <span className="text-[11px] opacity-75">شراء مباشر + عمولات تسويق 2%</span>
         </button>
       </div>
 
-      {/* فورم التسجيل والدخول */}
-      <form onSubmit={handleSubmit} className="card grid gap-4">
+      <form onSubmit={handleSubmit} className="grid gap-4 rounded-[24px] border border-white/[0.14] bg-gradient-to-b from-white/[0.09] to-white/[0.03] p-5 backdrop-blur-2xl saturate-150 shadow-[0_10px_32px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.25)] transition-all duration-300">
         {error && (
-          <div className="flex items-center gap-2 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-400">
+          <div className="flex items-center gap-2 rounded-2xl border border-[#FF453A]/40 bg-[#FF453A]/20 p-3 text-xs text-[#FF6961] shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
             <AlertCircle size={16} className="shrink-0"/>
             <span>{error}</span>
           </div>
@@ -156,13 +154,13 @@ export default function Login(){
 
         {tab === "workshop" ? (
           <>
-            <div className="border-b border-zinc-800 pb-3">
-              <h3 className="font-bold text-gold">بيانات الورشة أو الشركة المعتمدة</h3>
-              <p className="text-xs text-zinc-500">تُستخدم لتفعيل سقف الدين الآجل ونظام المراتب</p>
+            <div className="border-b border-white/[0.10] pb-3">
+              <h3 className="font-semibold tracking-tight text-white">بيانات الورشة أو الشركة المعتمدة</h3>
+              <p className="text-xs text-white/45">تُستخدم لتفعيل سقف الدين الآجل ونظام المراتب</p>
             </div>
 
             <input
-              className="inp w-full"
+              className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25"
               placeholder="اسم الورشة أو الشركة (مثال: ورشة الأمانة)"
               value={name}
               onChange={e=>setName(e.target.value)}
@@ -171,7 +169,7 @@ export default function Login(){
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <input
-                className="inp"
+                className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25"
                 dir="ltr"
                 placeholder="رقم الموبايل (09XXXXXXXX)"
                 value={phone}
@@ -179,7 +177,7 @@ export default function Login(){
                 required
               />
               <input
-                className="inp"
+                className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25"
                 type="password"
                 placeholder="كلمة المرور"
                 value={password}
@@ -190,14 +188,14 @@ export default function Login(){
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <input
-                className="inp"
+                className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25"
                 placeholder="رقم السجل التجاري / الصناعي أو الترخيص"
                 value={license}
                 onChange={e=>setLicense(e.target.value)}
                 required
               />
               <input
-                className="inp"
+                className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25"
                 placeholder="المدينة والمنطقة الصناعية"
                 value={city}
                 onChange={e=>setCity(e.target.value)}
@@ -206,8 +204,8 @@ export default function Login(){
             </div>
 
             <div>
-              <label className="mb-2 block text-xs text-zinc-400">اختصاص السيارات (يمكن اختيار أكثر من ماركة):</label>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+              <label className="mb-2 block text-xs text-white/45">اختصاص السيارات (يمكن اختيار أكثر من ماركة):</label>
+              <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-white/[0.08] bg-black/40 p-1.5 backdrop-blur-xl shadow-inner sm:grid-cols-3">
                 {[...BRANDS, "أخرى"].map(b => {
                   const isSelected = selectedSpecs.includes(b);
                   return (
@@ -215,8 +213,10 @@ export default function Login(){
                       type="button"
                       key={b}
                       onClick={()=>toggleSpec(b)}
-                      className={`rounded-xl border p-2 text-xs font-medium transition ${
-                        isSelected ? "border-gold bg-gold/10 text-gold" : "border-zinc-800 text-zinc-400"
+                      className={`rounded-xl border p-2 text-xs transition-all ${
+                        isSelected
+                          ? "border-white/[0.22] bg-white/[0.15] font-semibold text-white backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.3)]"
+                          : "border-transparent font-medium text-white/60 hover:bg-white/[0.05] hover:text-white"
                       }`}
                     >
                       {b} {isSelected && "✓"}
@@ -227,7 +227,7 @@ export default function Login(){
 
               {selectedSpecs.includes("أخرى") && (
                 <input
-                  className="inp mt-3"
+                  className="mt-3 w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25"
                   placeholder="اكتب نوع السيارات الأخرى..."
                   value={otherSpec}
                   onChange={e=>setOtherSpec(e.target.value)}
@@ -237,7 +237,7 @@ export default function Login(){
             </div>
 
             <input
-              className="inp"
+              className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25"
               placeholder="كود المسوّق الذي دعاك (اختياري)"
               value={refCode}
               onChange={e=>setRefCode(e.target.value)}
@@ -245,20 +245,20 @@ export default function Login(){
           </>
         ) : (
           <>
-            <div className="border-b border-zinc-800 pb-3">
-              <h3 className="font-bold text-gold">تسجيل عميل / مسوّق</h3>
-              <p className="text-xs text-zinc-500">حساب موحد للشراء المباشر وكسب عمولات دعوة الورشات</p>
+            <div className="border-b border-white/[0.10] pb-3">
+              <h3 className="font-semibold tracking-tight text-white">تسجيل عميل / مسوّق</h3>
+              <p className="text-xs text-white/45">حساب موحد للشراء المباشر وكسب عمولات دعوة الورشات</p>
             </div>
 
             <input
-              className="inp"
+              className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25"
               placeholder="الاسم الكامل"
               value={name}
               onChange={e=>setName(e.target.value)}
               required
             />
             <input
-              className="inp"
+              className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25"
               dir="ltr"
               placeholder="رقم الموبايل (09XXXXXXXX)"
               value={phone}
@@ -266,7 +266,7 @@ export default function Login(){
               required
             />
             <input
-              className="inp"
+              className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25"
               type="password"
               placeholder="كلمة المرور"
               value={password}
@@ -276,7 +276,7 @@ export default function Login(){
           </>
         )}
 
-        <button type="submit" disabled={loading} className="btn mt-2 disabled:opacity-50">
+        <button type="submit" disabled={loading} className="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#3A9BFD] to-[#007AFF] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_4px_20px_rgba(0,122,255,0.45),inset_0_1px_1px_rgba(255,255,255,0.45)] transition-all hover:brightness-110 active:scale-[0.97] disabled:opacity-50">
           {loading
             ? "جاري التحقق..."
             : (tab === "workshop" ? "دخول / تفعيل حساب الورشة" : "دخول / تفعيل حساب العميل والمسوّق")}
