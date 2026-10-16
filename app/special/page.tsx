@@ -1,4 +1,5 @@
 "use client";
+
 import {useState} from "react";
 import {Camera, CheckCircle2} from "lucide-react";
 import {BRANDS, PARTS} from "@/lib/data";
@@ -19,19 +20,19 @@ export default function Special(){
       .filter(name => partName.trim().length > 0 && name.includes(partName.trim()))
   ));
 
-  if(ok) return <div className="card mx-auto mt-16 max-w-md text-center">
-    <CheckCircle2 className="mx-auto mb-3 text-gold" size={48}/>
-    <h2 className="text-xl font-bold">وصلنا طلبك</h2>
-    <p className="mt-1 text-sm text-zinc-500">سنؤمّن القطعة ونرسل لك السعر.</p>
-    <button className="btn mt-4" onClick={()=>{setOk(false); setImg(""); setPartName(""); setOtherBrand(""); setShowSuggestions(false); setSelectedBrand(BRANDS[0] || "Mercedes-Benz");}}>طلب جديد</button>
+  if(ok) return <div className="mx-auto mt-16 max-w-md rounded-[24px] border border-white/[0.14] bg-gradient-to-b from-white/[0.09] to-white/[0.03] p-6 text-center backdrop-blur-2xl saturate-150 shadow-[0_10px_32px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.25)] transition-all duration-300">
+    <CheckCircle2 className="mx-auto mb-3 text-[#30D158]" size={48}/>
+    <h2 className="text-xl font-semibold tracking-tight text-white">وصلنا طلبك</h2>
+    <p className="mt-1 text-sm text-white/65">سنؤمّن القطعة ونرسل لك السعر.</p>
+    <button className="mt-4 inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#3A9BFD] to-[#007AFF] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_4px_20px_rgba(0,122,255,0.45),inset_0_1px_1px_rgba(255,255,255,0.45)] transition-all hover:brightness-110 active:scale-[0.97]" onClick={()=>{setOk(false); setImg(""); setPartName(""); setOtherBrand(""); setShowSuggestions(false); setSelectedBrand(BRANDS[0] || "Mercedes-Benz");}}>طلب جديد</button>
   </div>;
 
   return(<>
     <H t="الطلبات الخاصة" s="القطعة غير متوفرة؟ نؤمّنها لك ونسعّرها ونسلّمها، حتى من خارج البلد"/>
 
-    <form onSubmit={e=>{e.preventDefault(); setShowSuggestions(false); setOk(true)}} className="card mx-auto grid max-w-2xl gap-5">
+    <form onSubmit={e=>{e.preventDefault(); setShowSuggestions(false); setOk(true)}} className="mx-auto grid max-w-2xl gap-5 rounded-[24px] border border-white/[0.14] bg-gradient-to-b from-white/[0.09] to-white/[0.03] p-5 backdrop-blur-2xl saturate-150 shadow-[0_10px_32px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.25)] transition-all duration-300">
       {/* اختيار الماركة مع خيار أخرى */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-white/[0.08] bg-black/40 p-1.5 backdrop-blur-xl shadow-inner sm:grid-cols-3">
         {[...BRANDS, "أخرى"].map(b => {
           const isSelected = selectedBrand === b;
           return (
@@ -39,10 +40,10 @@ export default function Special(){
               type="button"
               key={b}
               onClick={() => setSelectedBrand(b)}
-              className={`p-3 rounded-xl border text-sm font-medium transition-all text-center ${
+              className={`rounded-xl border p-3 text-center text-sm transition-all ${
                 isSelected
-                  ? "border-gold bg-gold/10 text-gold shadow-sm"
-                  : "border-zinc-800 bg-zinc-900/50 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
+                  ? "border-white/[0.22] bg-white/[0.15] font-semibold text-white backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.3)]"
+                  : "border-transparent font-medium text-white/60 hover:bg-white/[0.05] hover:text-white"
               }`}
             >
               {b}
@@ -53,7 +54,7 @@ export default function Special(){
 
       {selectedBrand === "أخرى" && (
         <input
-          className="inp"
+          className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25"
           placeholder="اكتب نوع السيارة (مثال: بورش، سكودا...)"
           value={otherBrand}
           onChange={e=>setOtherBrand(e.target.value)}
@@ -64,7 +65,7 @@ export default function Special(){
       {/* حقل اسم القطعة مع الاقتراحات الفورية */}
       <div className="relative">
         <input
-          className="inp w-full"
+          className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25"
           placeholder="اسم القطعة (اكتب للبحث عن اقتراحات...)"
           value={partName}
           onChange={e=>{
@@ -78,7 +79,7 @@ export default function Special(){
         />
 
         {showSuggestions && suggestions.length > 0 && (
-          <div className="absolute inset-x-0 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-xl border border-zinc-700 bg-zinc-900 shadow-xl">
+          <div className="absolute inset-x-0 top-full z-10 mt-1 max-h-48 overflow-y-auto rounded-2xl border border-white/[0.14] bg-[#0B0F1A]/90 backdrop-blur-2xl saturate-150 shadow-[0_10px_32px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.25)]">
             {suggestions.map(item => (
               <button
                 type="button"
@@ -88,7 +89,7 @@ export default function Special(){
                   setPartName(item);
                   setShowSuggestions(false);
                 }}
-                className="block w-full cursor-pointer px-4 py-2.5 text-right text-sm text-zinc-200 transition hover:bg-gold/10 hover:text-gold"
+                className="block w-full cursor-pointer px-4 py-2.5 text-right text-sm text-white/80 transition-all hover:bg-white/[0.08] hover:text-white"
               >
                 {item}
               </button>
@@ -97,14 +98,14 @@ export default function Special(){
         )}
       </div>
 
-      <input className="inp" dir="ltr" placeholder="رقم القطعة أو رقم الشاصي (VIN)"/>
+      <input className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25" dir="ltr" placeholder="رقم القطعة أو رقم الشاصي (VIN)"/>
 
-      <textarea className="inp" rows={3} placeholder="ملاحظات: الموديل، السنة، المحرك…"/>
+      <textarea className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25" rows={3} placeholder="ملاحظات: الموديل، السنة، المحرك…"/>
 
-      <label className="flex h-44 cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-xl border-2 border-dashed border-zinc-700 text-sm text-zinc-500 transition hover:border-gold">
+      <label className="flex h-44 cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border-2 border-dashed border-white/[0.16] bg-black/35 text-sm text-white/65 backdrop-blur-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all hover:border-[#0A84FF] hover:text-white">
         {img
           ? <img src={img} alt="معاينة صورة القطعة" className="h-full w-full object-cover"/>
-          : <><Camera className="text-gold"/>صوّر القطعة القديمة أو دفتر الميكانيك/الشاصي</>
+          : <><Camera className="text-[#0A84FF]"/>صوّر القطعة القديمة أو دفتر الميكانيك/الشاصي</>
         }
         <input
           type="file"
@@ -118,7 +119,7 @@ export default function Special(){
         />
       </label>
 
-      <button className="btn">إرسال الطلب</button>
+      <button className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#3A9BFD] to-[#007AFF] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_4px_20px_rgba(0,122,255,0.45),inset_0_1px_1px_rgba(255,255,255,0.45)] transition-all hover:brightness-110 active:scale-[0.97]">إرسال الطلب</button>
     </form>
   </>);
 }
