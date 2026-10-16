@@ -54,47 +54,49 @@ export default function Cart(){
     if(sessionLoaded && !canPayByDebt && pay==="debt") setPay("cod");
   },[sessionLoaded,canPayByDebt,pay]);
 
-  if(done) return <div className="card mx-auto mt-16 max-w-md text-center"><CheckCircle2 className="mx-auto mb-3 text-gold" size={48}/><h2 className="text-xl font-bold">تم إرسال الطلب</h2><p className="mt-1 text-sm text-zinc-500">{done==="debt"?"طلبك بانتظار موافقة الأدمن على الدين.":"سنتواصل معك لتأكيد التوصيل."}</p></div>;
+  if(done) return <div className="mx-auto mt-16 max-w-md rounded-[24px] border border-white/[0.14] bg-gradient-to-b from-white/[0.09] to-white/[0.03] p-6 text-center backdrop-blur-2xl saturate-150 shadow-[0_10px_32px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.25)] transition-all duration-300"><CheckCircle2 className="mx-auto mb-3 text-[#30D158]" size={48}/><h2 className="text-xl font-semibold tracking-tight text-white">تم إرسال الطلب</h2><p className="mt-1 text-sm text-white/65">{done==="debt"?"طلبك بانتظار موافقة الأدمن على الدين.":"سنتواصل معك لتأكيد التوصيل."}</p></div>;
 
   return(<>
     <H t="السلة وإتمام الطلب" s="توصيل وشحن لكافة المحافظات السورية"/>
     {!rows.length
-      ? <p className="card text-center text-zinc-500">السلة فارغة. أضف قطعًا من الكتالوج.</p>
+      ? <p className="rounded-[24px] border border-white/[0.14] bg-gradient-to-b from-white/[0.09] to-white/[0.03] p-4 text-center text-white/65 backdrop-blur-2xl saturate-150 shadow-[0_10px_32px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.25)] transition-all duration-300">السلة فارغة. أضف قطعًا من الكتالوج.</p>
       : <div className="grid gap-4 lg:grid-cols-[1fr_380px]">
-          <div className="card space-y-3">
+          <div className="space-y-3 rounded-[24px] border border-white/[0.14] bg-gradient-to-b from-white/[0.09] to-white/[0.03] p-4 backdrop-blur-2xl saturate-150 shadow-[0_10px_32px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.25)] transition-all duration-300">
             {rows.map(p=><div key={p.id} className="flex items-center gap-2">
-              <div className="flex-1 text-sm"><b>{p.name}</b><p className="text-xs text-zinc-500">{p.brand} · {p.pn}</p></div>
-              <button onClick={()=>dec(p.id)} className="btn2 !p-1.5" aria-label={"تقليل كمية "+p.name}><Minus size={14}/></button>
-              <span className="w-5 text-center">{items[p.id]}</span>
-              <button onClick={()=>add(p.id)} className="btn2 !p-1.5" aria-label={"زيادة كمية "+p.name}><Plus size={14}/></button>
-              <b className="w-16 text-end">{usd(p.price*items[p.id])}</b>
+              <div className="flex-1 text-sm"><b className="font-semibold tracking-tight text-white">{p.name}</b><p className="text-xs text-white/45">{p.brand} · {p.pn}</p></div>
+              <button onClick={()=>dec(p.id)} className="inline-flex items-center justify-center rounded-full border border-white/[0.16] bg-white/[0.08] p-1.5 text-white backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] transition-all hover:bg-white/[0.14] active:scale-[0.97]" aria-label={"تقليل كمية "+p.name}><Minus size={14}/></button>
+              <span className="w-5 text-center font-medium text-white">{items[p.id]}</span>
+              <button onClick={()=>add(p.id)} className="inline-flex items-center justify-center rounded-full border border-white/[0.16] bg-white/[0.08] p-1.5 text-white backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] transition-all hover:bg-white/[0.14] active:scale-[0.97]" aria-label={"زيادة كمية "+p.name}><Plus size={14}/></button>
+              <b className="w-16 text-end font-semibold text-white">{usd(p.price*items[p.id])}</b>
             </div>)}
-            <p className="border-t border-zinc-200 pt-3 text-end text-lg font-black dark:border-zinc-800">{usd(total)}</p>
+            <p className="border-t border-white/[0.10] pt-3 text-end text-lg font-semibold tracking-tight text-white">{usd(total)}</p>
           </div>
 
-          <div className="card space-y-3">
-            <h3 className="font-bold">طريقة الدفع</h3>
-            {!sessionLoaded && <p className="text-xs text-zinc-500">جارٍ التحقق من نوع الحساب...</p>}
-            {paymentOptions.map(([key,label,Icon,description])=>(
-              <button
-                key={key}
-                onClick={()=>setPay(key)}
-                className={`flex w-full items-center gap-3 rounded-xl border p-3 text-start text-sm transition ${pay===key?"border-gold bg-gold/10":"border-zinc-300 dark:border-zinc-700"}`}
-              >
-                <Icon className="shrink-0 text-gold" size={20}/>
-                <span><b>{label}</b><small className="block text-zinc-500">{description}</small></span>
-              </button>
-            ))}
-            {pay==="sham"&&<label className="btn2 w-full cursor-pointer"><Upload size={16}/>{file||"ارفع إشعار التحويل"}<input type="file" hidden accept="image/*" onChange={e=>setFile(e.target.files?.[0]?.name||"")}/></label>}
-            {pay==="debt"&&canPayByDebt&&<div className="flex gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-600 dark:text-amber-400"><AlertTriangle size={18} className="shrink-0"/><p>عدّاد 30 يومًا يبدأ من أول قطعة دين. عند تجاوزه يتوقف السحب الآجل حتى التسديد. الكاش باك والعمولة يُصرفان بعد التسديد.<br/>المتاح من سقفك: <b>{usd(1200)}</b></p></div>}
+          <div className="space-y-3 rounded-[24px] border border-white/[0.14] bg-gradient-to-b from-white/[0.09] to-white/[0.03] p-4 backdrop-blur-2xl saturate-150 shadow-[0_10px_32px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.25)] transition-all duration-300">
+            <h3 className="font-semibold tracking-tight text-white">طريقة الدفع</h3>
+            {!sessionLoaded && <p className="text-xs text-white/45">جارٍ التحقق من نوع الحساب...</p>}
+            <div className="space-y-1.5 rounded-2xl border border-white/[0.08] bg-black/40 p-1.5 backdrop-blur-xl shadow-inner">
+              {paymentOptions.map(([key,label,Icon,description])=>(
+                <button
+                  key={key}
+                  onClick={()=>setPay(key)}
+                  className={`flex w-full items-center gap-3 rounded-xl border p-3 text-start text-sm transition-all ${pay===key?"border-white/[0.22] bg-white/[0.15] text-white backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.3)]":"border-transparent text-white/60 hover:bg-white/[0.05] hover:text-white"}`}
+                >
+                  <Icon className="shrink-0 text-[#0A84FF]" size={20}/>
+                  <span><b className="font-semibold">{label}</b><small className="block text-white/45">{description}</small></span>
+                </button>
+              ))}
+            </div>
+            {pay==="sham"&&<label className="inline-flex w-full cursor-pointer items-center justify-center gap-2 rounded-full border border-white/[0.16] bg-white/[0.08] px-4 py-2.5 text-sm text-white backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] transition-all hover:bg-white/[0.14] active:scale-[0.97]"><Upload size={16}/>{file||"ارفع إشعار التحويل"}<input type="file" hidden accept="image/*" onChange={e=>setFile(e.target.files?.[0]?.name||"")}/></label>}
+            {pay==="debt"&&canPayByDebt&&<div className="flex gap-2 rounded-2xl border border-[#FF9F0A]/35 bg-[#FF9F0A]/15 p-3 text-xs text-[#FF9F0A]"><AlertTriangle size={18} className="shrink-0"/><p>عدّاد 30 يومًا يبدأ من أول قطعة دين. عند تجاوزه يتوقف السحب الآجل حتى التسديد. الكاش باك والعمولة يُصرفان بعد التسديد.<br/>المتاح من سقفك: <b>{usd(1200)}</b></p></div>}
             {err && (
-              <p className="rounded-xl border border-red-500/30 bg-red-500/10 p-2.5 text-xs text-red-400">
+              <p className="rounded-2xl border border-[#FF453A]/40 bg-[#FF453A]/20 p-2.5 text-xs text-[#FF6961] shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
                 {err}
               </p>
             )}
 
             <button
-              className="btn w-full disabled:opacity-50"
+              className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#3A9BFD] to-[#007AFF] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_4px_20px_rgba(0,122,255,0.45),inset_0_1px_1px_rgba(255,255,255,0.45)] transition-all hover:brightness-110 active:scale-[0.97] disabled:opacity-50"
               disabled={
                 !sessionLoaded ||
                 submitting ||
@@ -130,7 +132,7 @@ export default function Cart(){
             >
               {submitting ? "جارٍ تأكيد الطلب..." : `تأكيد الطلب · ${usd(total)}`}
             </button>
-            {sessionLoaded && role!=="workshop" && <p className="text-center text-xs text-zinc-500">الدفع بالدين متاح حصريًا لحسابات الورشات.</p>}
+            {sessionLoaded && role!=="workshop" && <p className="text-center text-xs text-white/45">الدفع بالدين متاح حصريًا لحسابات الورشات.</p>}
           </div>
         </div>
     }
