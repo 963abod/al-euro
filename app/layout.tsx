@@ -19,9 +19,9 @@ export default function L({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="ar" dir="rtl" suppressHydrationWarning className="dark">
-      <body className={`${f.className} bg-[#06080E] text-white antialiased selection:bg-[#0A84FF]/30`}>
-        <ThemeProvider attribute="class" defaultTheme="dark">
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
+      <body className={`${f.className} antialiased selection:bg-[#0A84FF]/30`}>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <CartProvider>
             <Shell>{children}</Shell>
           </CartProvider>
