@@ -4,7 +4,10 @@ import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabase";
 
 const COOKIE_NAME = "euro_session";
-const SECRET = process.env.AUTH_SECRET || "al-euro-default-secret-key-2026";
+const SECRET = process.env.AUTH_SECRET;
+if (!SECRET) {
+  throw new Error("AUTH_SECRET is not defined in environment variables");
+}
 
 function sign(payload: object): string {
   const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
