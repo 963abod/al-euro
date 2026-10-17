@@ -38,6 +38,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [license, setLicense] = useState("");
   const [city, setCity] = useState("حلب");
+  const [isCityOpen, setIsCityOpen] = useState(false); // تحكم بفتح وإغلاق قائمة المحافظات المخصصة
   const [selectedBrands, setSelectedBrands] = useState<string[]>(["Mercedes-Benz"]);
   const [otherBrandText, setOtherBrandText] = useState("");
   const [refCode, setRefCode] = useState("");
@@ -371,34 +372,81 @@ export default function LoginPage() {
                   style={{ background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: "10px 12px", fontSize: 13 }}
                 />
 
-                {/* اختيار المحافظة بستايل مستطيل منسدل احترافي تماماً مثل خيارات السيارات */}
+                {/* اختيار المحافظة بستايل زجاجي متطابق مع استايل اختيار السيارات */}
                 <div style={{ position: "relative" }}>
                   <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, marginBottom: 6, color: "var(--muted)" }}>
                     المحافظة:
                   </label>
-                  <select
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
+                  <button
+                    type="button"
+                    onClick={() => setIsCityOpen(!isCityOpen)}
                     style={{
                       width: "100%",
-                      background: "rgba(0,0,0,0.3)",
+                      background: "rgba(0,0,0,0.25)",
                       border: "1px solid rgba(255,255,255,0.1)",
                       borderRadius: 10,
                       padding: "11px 14px",
                       fontSize: 13,
                       color: "#fff",
-                      appearance: "none",
-                      outline: "none",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
                       cursor: "pointer",
                     }}
                   >
-                    {SYRIAN_CITIES.map((c) => (
-                      <option key={c} value={c} style={{ background: "#121212", color: "#fff" }}>
-                        {c}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown size={16} style={{ position: "absolute", left: 14, top: 38, color: "var(--muted)", pointerEvents: "none" }} />
+                    <span>{city}</span>
+                    <ChevronDown size={16} style={{ color: "var(--muted)", transform: isCityOpen ? "rotate(180deg)" : "none", transition: "0.2s" }} />
+                  </button>
+
+                  {/* قائمة المحافظات المنبثقة بشكل فخم */}
+                  {isCityOpen && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "100%",
+                        left: 0,
+                        right: 0,
+                        marginTop: 6,
+                        background: "#121318",
+                        border: "1px solid rgba(255,255,255,0.12)",
+                        borderRadius: 12,
+                        padding: 8,
+                        display: "grid",
+                        gridTemplateColumns: "1fr 1fr",
+                        gap: 6,
+                        zIndex: 50,
+                        boxShadow: "0 10px 25px rgba(0,0,0,0.5)",
+                        backdropFilter: "blur(15px)",
+                      }}
+                    >
+                      {SYRIAN_CITIES.map((c) => {
+                        const active = city === c;
+                        return (
+                          <button
+                            key={c}
+                            type="button"
+                            onClick={() => {
+                              setCity(c);
+                              setIsCityOpen(false);
+                            }}
+                            style={{
+                              padding: "8px 10px",
+                              borderRadius: 8,
+                              fontSize: 12,
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              border: active ? "1px solid #3b82f6" : "1px solid rgba(255,255,255,0.06)",
+                              background: active ? "rgba(59, 130, 246, 0.25)" : "rgba(255,255,255,0.02)",
+                              color: active ? "#93c5fd" : "var(--text)",
+                              textAlign: "right",
+                            }}
+                          >
+                            {active ? "✓ " : ""} {c}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
                 <div
