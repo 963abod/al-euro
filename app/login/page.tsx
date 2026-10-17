@@ -53,7 +53,7 @@ export default function LoginPage() {
         return;
       }
       finalSpecs = selectedBrands
-        .map((b) => (b === "أخرى" ? `أخرى (${otherBrandText.trim()})` : b))
+        .map((b) => (b === "أخرى" ? \`أخرى (\${otherBrandText.trim()})\` : b))
         .join("، ");
     }
 
@@ -92,7 +92,7 @@ export default function LoginPage() {
 
       setMsg("تم تسجيل الدخول بنجاح! جاري تحويلك...");
       const targetRole = data.user?.role || role;
-      window.setTimeout(() => {
+      setTimeout(() => {
         window.location.href = targetRole === "workshop" ? "/workshop" : "/marketer";
       }, 800);
     } catch {
@@ -103,27 +103,29 @@ export default function LoginPage() {
   };
 
   return (
-    <div style={{ maxWidth: 680, margin: "0 auto", padding: "24px 16px" }}>
-      <div style={{ textAlign: "center", marginBottom: 22 }}>
-        <h1 style={{ fontSize: 26, fontWeight: 900, marginBottom: 6 }}>
-          بوابة الحسابات — اليورو
+    <div style={{ maxWidth: 600, margin: "0 auto", padding: "20px 14px 100px" }}>
+      {/* الترويسة بستايل iOS نظيف */}
+      <div style={{ textAlign: "center", marginBottom: 20 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.5px", marginBottom: 4 }}>
+          حسابي — اليورو
         </h1>
-        <p style={{ color: "var(--muted)", fontSize: 14 }}>
-          سجّل دخولك أو أنشئ حساباً جديداً للوصول إلى خدمات المنصة
+        <p style={{ color: "var(--muted)", fontSize: 13 }}>
+          إدارة حسابك والوصول للخدمات الخاصة
         </p>
       </div>
 
-      {/* التبديل الرئيسي: تسجيل الدخول / إنشاء حساب جديد */}
+      {/* أزرار التبديل الفخمة (iOS Segmented Control) */}
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
-          gap: 8,
-          background: "rgba(255,255,255,0.03)",
-          padding: 6,
-          borderRadius: 16,
-          border: "1px solid var(--border)",
-          marginBottom: 22,
+          gap: 4,
+          background: "rgba(255, 255, 255, 0.05)",
+          padding: 4,
+          borderRadius: 14,
+          border: "1px solid rgba(255, 255, 255, 0.08)",
+          marginBottom: 18,
+          backdropFilter: "blur(10px)",
         }}
       >
         <button
@@ -132,25 +134,24 @@ export default function LoginPage() {
             setAuthMode("login");
             setErrorMsg("");
             setPendingNotice("");
-            setMsg("");
           }}
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 8,
-            padding: "12px 16px",
-            borderRadius: 12,
-            fontWeight: 800,
-            fontSize: 14,
+            gap: 6,
+            padding: "10px 14px",
+            borderRadius: 10,
+            fontWeight: 700,
+            fontSize: 13.5,
             cursor: "pointer",
             border: "none",
-            background: authMode === "login" ? "var(--primary, #2563eb)" : "transparent",
-            color: authMode === "login" ? "#fff" : "var(--muted)",
-            transition: "0.2s",
+            background: authMode === "login" ? "rgba(59, 130, 246, 0.25)" : "transparent",
+            color: authMode === "login" ? "#60a5fa" : "var(--muted)",
+            transition: "all 0.2s ease",
           }}
         >
-          <LogIn size={18} />
+          <LogIn size={16} />
           تسجيل الدخول
         </button>
 
@@ -160,145 +161,140 @@ export default function LoginPage() {
             setAuthMode("register");
             setErrorMsg("");
             setPendingNotice("");
-            setMsg("");
           }}
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            gap: 8,
-            padding: "12px 16px",
-            borderRadius: 12,
-            fontWeight: 800,
-            fontSize: 14,
+            gap: 6,
+            padding: "10px 14px",
+            borderRadius: 10,
+            fontWeight: 700,
+            fontSize: 13.5,
             cursor: "pointer",
             border: "none",
-            background: authMode === "register" ? "var(--primary, #2563eb)" : "transparent",
-            color: authMode === "register" ? "#fff" : "var(--muted)",
-            transition: "0.2s",
+            background: authMode === "register" ? "rgba(59, 130, 246, 0.25)" : "transparent",
+            color: authMode === "register" ? "#60a5fa" : "var(--muted)",
+            transition: "all 0.2s ease",
           }}
         >
-          <UserPlus size={18} />
-          إنشاء حساب جديد
+          <UserPlus size={16} />
+          إنشاء حساب
         </button>
       </div>
 
-      {/* إشعار انتظار موافقة الإدارة للورشات */}
+      {/* تنبيه موافقة الورشة */}
       {pendingNotice && (
         <div
-          className="card"
           style={{
-            padding: 20,
-            marginBottom: 20,
-            border: "1px solid rgba(245, 158, 11, 0.45)",
-            background: "rgba(245, 158, 11, 0.08)",
+            padding: 16,
+            borderRadius: 14,
+            background: "rgba(245, 158, 11, 0.1)",
+            border: "1px solid rgba(245, 158, 11, 0.3)",
             textAlign: "center",
+            marginBottom: 16,
+            backdropFilter: "blur(10px)",
           }}
         >
-          <Clock size={36} style={{ color: "#f59e0b", margin: "0 auto 10px" }} />
-          <h3 style={{ fontSize: 17, fontWeight: 800, color: "#fbbf24", marginBottom: 6 }}>
-            طلبك قيد المراجعة لدى الإدارة
+          <Clock size={30} style={{ color: "#fbbf24", margin: "0 auto 8px" }} />
+          <h3 style={{ fontSize: 15, fontWeight: 800, color: "#fbbf24", marginBottom: 4 }}>
+            الطلب قيد مراجعة الإدارة
           </h3>
-          <p style={{ fontSize: 13.5, color: "var(--text)", lineHeight: 1.7 }}>
+          <p style={{ fontSize: 12.5, color: "var(--text)", lineHeight: 1.6 }}>
             {pendingNotice}
           </p>
         </div>
       )}
 
-      {/* في حال إنشاء حساب جديد: اختيار نوع الحساب */}
+      {/* خيارات نوع الحساب عند التسجيل (بستايل بطاقات أبل المريحة) */}
       {authMode === "register" && (
         <div
-          className="card"
           style={{
-            padding: 10,
             display: "grid",
             gridTemplateColumns: "1fr 1fr",
             gap: 10,
-            marginBottom: 20,
+            marginBottom: 16,
           }}
         >
           <button
             type="button"
             onClick={() => setRole("workshop")}
             style={{
-              padding: 14,
-              borderRadius: 12,
+              padding: "12px 10px",
+              borderRadius: 14,
               cursor: "pointer",
               border:
                 role === "workshop"
-                  ? "1.5px solid var(--primary)"
-                  : "1px solid var(--border)",
+                  ? "1.5px solid #3b82f6"
+                  : "1px solid rgba(255, 255, 255, 0.08)",
               background:
-                role === "workshop" ? "rgba(37, 99, 235, 0.12)" : "transparent",
+                role === "workshop" ? "rgba(59, 130, 246, 0.15)" : "rgba(255, 255, 255, 0.02)",
               color: "var(--text)",
               textAlign: "center",
+              transition: "0.2s",
             }}
           >
-            <Wrench size={20} style={{ margin: "0 auto 6px", color: "#3b82f6" }} />
-            <div style={{ fontWeight: 800, fontSize: 14 }}>حساب ورشة / شركة</div>
-            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
-              شراء آجل، دفتر ديون، كاش باك (يتطلب موافقة الإدارة)
-            </div>
+            <Wrench size={18} style={{ margin: "0 auto 4px", color: "#60a5fa" }} />
+            <div style={{ fontWeight: 700, fontSize: 13 }}>ورشة / شركة</div>
+            <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 2 }}>يتطلب موافقة الإدارة</div>
           </button>
 
           <button
             type="button"
             onClick={() => setRole("marketer")}
             style={{
-              padding: 14,
-              borderRadius: 12,
+              padding: "12px 10px",
+              borderRadius: 14,
               cursor: "pointer",
               border:
                 role === "marketer"
-                  ? "1.5px solid var(--accent)"
-                  : "1px solid var(--border)",
+                  ? "1.5px solid #f59e0b"
+                  : "1px solid rgba(255, 255, 255, 0.08)",
               background:
-                role === "marketer" ? "rgba(245, 158, 11, 0.12)" : "transparent",
+                role === "marketer" ? "rgba(245, 158, 11, 0.15)" : "rgba(255, 255, 255, 0.02)",
               color: "var(--text)",
               textAlign: "center",
+              transition: "0.2s",
             }}
           >
-            <Share2 size={20} style={{ margin: "0 auto 6px", color: "#f59e0b" }} />
-            <div style={{ fontWeight: 800, fontSize: 14 }}>حساب عميل / مسوّق</div>
-            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
-              شراء مباشر + عمولات تسويق 2% (تفعيل فوري)
-            </div>
+            <Share2 size={18} style={{ margin: "0 auto 4px", color: "#fbbf24" }} />
+            <div style={{ fontWeight: 700, fontSize: 13 }}>عميل / مسوّق</div>
+            <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 2 }}>تفعيل فوري</div>
           </button>
         </div>
       )}
 
-      {/* نموذج الإدخال */}
+      {/* النموذج بستايل زجاجي ناعم */}
       <form
         onSubmit={handleSubmit}
-        className="card"
-        style={{ padding: 24, display: "grid", gap: 14 }}
+        style={{
+          background: "rgba(255, 255, 255, 0.03)",
+          border: "1px solid rgba(255, 255, 255, 0.08)",
+          borderRadius: 16,
+          padding: 18,
+          display: "grid",
+          gap: 12,
+          backdropFilter: "blur(12px)",
+        }}
       >
-        <div style={{ borderBottom: "1px solid var(--border)", paddingBottom: 12 }}>
-          <h2 style={{ fontSize: 18, fontWeight: 800 }}>
+        <div style={{ paddingBottom: 8, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+          <h2 style={{ fontSize: 16, fontWeight: 800 }}>
             {authMode === "login"
-              ? "تسجيل الدخول إلى حسابك"
+              ? "تسجيل الدخول"
               : role === "workshop"
-              ? "طلب اعتماد ورشة أو شركة جديدة"
-              : "إنشاء حساب عميل / مسوّق فوري"}
+              ? "بيانات اعتماد الورشة الجديدة"
+              : "بيانات حساب المسوّق الجديد"}
           </h2>
-          <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 4 }}>
-            {authMode === "login"
-              ? "أدخل رقم الموبايل وكلمة المرور المسجلين لدينا"
-              : role === "workshop"
-              ? "يرجى إدخال بيانات الترخيص بدقة ليتم تفعيل الحساب وسقف الدين من قبل الإدارة"
-              : "حساب موحد للشراء المباشر وكسب عمولات دعوة الورشات"}
-          </p>
         </div>
 
         {authMode === "register" && (
           <input
             className="input"
-            placeholder={
-              role === "workshop" ? "اسم الورشة أو الشركة الرسمي" : "الاسم الكامل"
-            }
+            placeholder={role === "workshop" ? "اسم الورشة أو الشركة الرسمي" : "الاسم الكامل"}
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
+            style={{ background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: "10px 12px", fontSize: 13 }}
           />
         )}
 
@@ -309,6 +305,7 @@ export default function LoginPage() {
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           required
+          style={{ background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: "10px 12px", fontSize: 13 }}
         />
 
         <input
@@ -318,9 +315,9 @@ export default function LoginPage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
+          style={{ background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: "10px 12px", fontSize: 13 }}
         />
 
-        {/* حقول إضافية خاصة بتسجيل ورشة جديدة فقط */}
         {authMode === "register" && role === "workshop" && (
           <>
             <input
@@ -329,41 +326,35 @@ export default function LoginPage() {
               value={license}
               onChange={(e) => setLicense(e.target.value)}
               required
+              style={{ background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: "10px 12px", fontSize: 13 }}
             />
 
             <select
               className="select"
               value={city}
               onChange={(e) => setCity(e.target.value)}
+              style={{ background: "rgba(0,0,0,0.3)", borderRadius: 10, padding: "10px 12px", fontSize: 13, color: "#fff" }}
             >
-              <option value="حلب">المحافظة: حلب</option>
-              <option value="دمشق">المحافظة: دمشق</option>
-              <option value="حمص">المحافظة: حمص</option>
-              <option value="حماة">المحافظة: حماة</option>
-              <option value="اللاذقية">المحافظة: اللاذقية</option>
-              <option value="طرطوس">المحافظة: طرطوس</option>
+              <option value="حلب" style={{ background: "#111" }}>المحافظة: حلب</option>
+              <option value="دمشق" style={{ background: "#111" }}>المحافظة: دمشق</option>
+              <option value="حمص" style={{ background: "#111" }}>المحافظة: حمص</option>
+              <option value="حماة" style={{ background: "#111" }}>المحافظة: حماة</option>
+              <option value="اللاذقية" style={{ background: "#111" }}>المحافظة: اللاذقية</option>
+              <option value="طرطوس" style={{ background: "#111" }}>المحافظة: طرطوس</option>
             </select>
 
             <div
               style={{
-                background: "rgba(255,255,255,0.02)",
-                border: "1px solid var(--border)",
-                borderRadius: 12,
-                padding: 14,
+                background: "rgba(0,0,0,0.15)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 10,
+                padding: 10,
               }}
             >
-              <label
-                style={{
-                  display: "block",
-                  fontSize: 12,
-                  fontWeight: 800,
-                  marginBottom: 10,
-                  color: "var(--muted)",
-                }}
-              >
-                اختصاص الورشة (يمكنك اختيار أكثر من ماركة):
+              <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, marginBottom: 8, color: "var(--muted)" }}>
+                اختصاص الورشة (الماركات):
               </label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {AVAILABLE_BRANDS.map((brand) => {
                   const active = selectedBrands.includes(brand);
                   return (
@@ -372,18 +363,14 @@ export default function LoginPage() {
                       type="button"
                       onClick={() => toggleBrand(brand)}
                       style={{
-                        padding: "7px 12px",
+                        padding: "5px 10px",
                         borderRadius: 8,
-                        fontSize: 12,
-                        fontWeight: 700,
+                        fontSize: 11.5,
+                        fontWeight: 600,
                         cursor: "pointer",
-                        border: active
-                          ? "1.5px solid #3b82f6"
-                          : "1px solid var(--border)",
-                        background: active
-                          ? "rgba(59, 130, 246, 0.18)"
-                          : "transparent",
-                        color: active ? "#60a5fa" : "var(--muted)",
+                        border: active ? "1px solid #3b82f6" : "1px solid rgba(255,255,255,0.08)",
+                        background: active ? "rgba(59, 130, 246, 0.2)" : "transparent",
+                        color: active ? "#93c5fd" : "var(--muted)",
                       }}
                     >
                       {active ? "✓ " : "+ "} {brand}
@@ -395,8 +382,8 @@ export default function LoginPage() {
               {selectedBrands.includes("أخرى") && (
                 <input
                   className="input"
-                  style={{ marginTop: 10 }}
-                  placeholder="اكتب اسم الماركة أو الاختصاص الإضافي..."
+                  style={{ marginTop: 8, background: "rgba(0,0,0,0.2)", borderRadius: 8, padding: "8px 10px", fontSize: 12 }}
+                  placeholder="اسم الماركة الإضافية..."
                   value={otherBrandText}
                   onChange={(e) => setOtherBrandText(e.target.value)}
                   required
@@ -406,27 +393,26 @@ export default function LoginPage() {
 
             <input
               className="input"
-              placeholder="كود المسوّق إن وجد (مثال: MK-8F4A2C)"
+              placeholder="كود المسوّق إن وجد (اختياري)"
               value={refCode}
               onChange={(e) => setRefCode(e.target.value)}
+              style={{ background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: "10px 12px", fontSize: 13 }}
             />
 
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 8,
-                fontSize: 12,
+                gap: 6,
+                fontSize: 11.5,
                 color: "#93c5fd",
-                background: "rgba(37, 99, 235, 0.08)",
-                padding: "10px 12px",
-                borderRadius: 10,
+                background: "rgba(37, 99, 235, 0.1)",
+                padding: "8px 10px",
+                borderRadius: 8,
               }}
             >
-              <ShieldCheck size={18} />
-              <span>
-                حفاظاً على موثوقية التعامل الآجل، يتم تفعيل حسابات الورشات بعد مراجعة الإدارة.
-              </span>
+              <ShieldCheck size={16} />
+              <span>حسابات الورشات تتطلب مراجعة وموافقة الإدارة قبل التفعيل.</span>
             </div>
           </>
         )}
@@ -434,30 +420,37 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className={
-            authMode === "register" && role === "marketer"
-              ? "btn-accent"
-              : "btn-primary"
-          }
-          style={{ marginTop: 6, padding: 14, fontSize: 15 }}
+          style={{
+            marginTop: 4,
+            padding: "12px",
+            borderRadius: 12,
+            fontWeight: 800,
+            fontSize: 14,
+            cursor: "pointer",
+            border: "none",
+            background: authMode === "register" && role === "marketer" ? "#f59e0b" : "#2563eb",
+            color: "#fff",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+            transition: "0.2s",
+          }}
         >
           {loading
             ? "جاري المعالجة..."
             : authMode === "login"
             ? "تسجيل الدخول"
             : role === "workshop"
-            ? "إرسال طلب اعتماد الورشة للإدارة"
-            : "إنشاء حساب عميل / مسوّق فوراً"}
+            ? "إرسال طلب اعتماد الورشة"
+            : "إنشاء الحساب فوراً"}
         </button>
 
         {errorMsg && (
           <div
             style={{
-              padding: 12,
-              borderRadius: 10,
-              background: "rgba(239, 68, 68, 0.12)",
+              padding: 10,
+              borderRadius: 8,
+              background: "rgba(239, 68, 68, 0.15)",
               color: "#f87171",
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: 700,
               textAlign: "center",
             }}
@@ -469,11 +462,11 @@ export default function LoginPage() {
         {msg && (
           <div
             style={{
-              padding: 12,
-              borderRadius: 10,
-              background: "rgba(16, 185, 129, 0.12)",
+              padding: 10,
+              borderRadius: 8,
+              background: "rgba(16, 185, 129, 0.15)",
               color: "#34d399",
-              fontSize: 13,
+              fontSize: 12,
               fontWeight: 700,
               display: "flex",
               alignItems: "center",
@@ -481,7 +474,7 @@ export default function LoginPage() {
               gap: 6,
             }}
           >
-            <CheckCircle2 size={16} /> {msg}
+            <CheckCircle2 size={15} /> {msg}
           </div>
         )}
       </form>
