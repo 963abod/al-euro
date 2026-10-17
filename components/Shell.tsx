@@ -42,13 +42,11 @@ export default function Shell({
     ["/", "الكتالوج", Store],
     ["/cart", "السلة", ShoppingCart],
     ["/special", "طلب خاص", PackageSearch],
-    ...(loading
-      ? [["/login", "حسابي", UserCheck] as const]
-      : user?.role === "workshop"
-      ? [["/workshop", "الورشة", Wrench] as const]
+    ...(user?.role === "workshop"
+      ? ([["/workshop", "الورشة", Wrench]] as const)
       : user?.role === "marketer"
-      ? [["/marketer", "المسوّق والعميل", Share2] as const]
-      : [["/login", "حسابي", UserCheck] as const]),
+      ? ([["/marketer", "حسابي", Share2]] as const)
+      : ([["/login", "حسابي", UserCheck]] as const)),
   ] as const;
 
   return (
