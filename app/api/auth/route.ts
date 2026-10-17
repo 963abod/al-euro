@@ -90,26 +90,49 @@ export async function POST(req: Request) {
         ? spec.split(",").map((s: string) => s.trim()).filter(Boolean)
         : [];
 
-      const generatedRefCode =
-        role === "marketer"
-          ? `MK-${crypto.randomBytes(3).toString("hex").toUpperCase()}`
-          : null;
+      let newUser = null;
+      let insertError = null;
 
-      const { data: newUser, error: insertError } = await supabaseAdmin
-        .from("users")
-        .insert({
-          role,
-          name,
-          phone,
-          password_hash: passHash,
-          license: role === "workshop" ? license : null,
-          city: role === "workshop" ? city : null,
-          specs: specsArray,
-          my_ref_code: generatedRefCode,
-          referred_by_code: role === "workshop" && refCode ? refCode : null,
-        })
-        .select("*")
-        .single();
+      // محاولة الإدخال حتى 5 مرات في حال تصادم كود المسوق (خطأ 23505)
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const generatedRefCode =
+          role === "marketer"
+            ? `MK-${crypto.randomBytes(3).toString("hex").toUpperCase()}`
+            : null;
+
+        const res = await supabaseAdmin
+          .from("users")
+          .insert({
+            role,
+            name,
+            phone,
+            password_hash: passHash,
+            license: role === "workshop" ? license : null,
+            city: role === "workshop" ? city : null,
+            specs: specsArray,
+            my_ref_code: generatedRefCode,
+            referred_by_code: role === "workshop" && refCode ? refCode : null,
+          })
+          .select("*")
+          .single();
+
+        if (!res.error) {
+          newUser = res.data;
+          insertError = null;
+          break;
+        }
+
+        insertError = res.error;
+
+        // إذا كان الخطأ بسبب تكرار my_ref_code نعيد المحاولة بكود جديد، وإلا نتوقف
+        const isRefCollision =
+          res.error.code === "23505" &&
+          res.error.message?.includes("my_ref_code");
+
+        if (!isRefCollision) {
+          break;
+        }
+      }
 
       if (insertError || !newUser) {
         return NextResponse.json(
