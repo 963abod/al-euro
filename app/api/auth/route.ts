@@ -49,122 +49,180 @@ export async function GET() {
 
     const { data: user } = await supabaseAdmin
       .from("users")
-      .select("id, role, name, phone, city, specs, tier, debt_limit, debt_balance, cashback_balance, my_ref_code")
+      .select("id, role, name, phone, city, specs, tier, debt_limit, debt_balance, cashback_balance, my_ref_code, is_active")
       .eq("id", session.id)
       .single();
 
-    return NextResponse.json({ user: user || session });
+    if (!user || !user.is_active) {
+      cookies().delete(COOKIE_NAME);
+      return NextResponse.json({ user: null });
+    }
+
+    return NextResponse.json({ user });
   } catch {
     return NextResponse.json({ user: null });
   }
 }
 
-// تسجيل دخول أو إنشاء حساب جديد في Supabase
+// معالجة تسجيل الدخول (login) أو إنشاء حساب جديد (register)
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { role, name, phone, password, license, city, spec, refCode } = body;
+    const { mode = "login", role, name, phone, password, license, city, spec, refCode } = body;
 
-    if (!phone || !password || !role) {
+    if (!phone || !password) {
       return NextResponse.json({ error: "يرجى إدخال رقم الموبايل وكلمة المرور" }, { status: 400 });
     }
 
+    const cleanPhone = String(phone).trim();
     const passHash = hashPassword(password);
 
-    // 1. فحص إذا كان الحساب موجود مسبقاً برقم الموبايل
+    // البحث عن الحساب برقم الموبايل
     const { data: existingUser, error: findError } = await supabaseAdmin
       .from("users")
       .select("*")
-      .eq("phone", phone)
+      .eq("phone", cleanPhone)
       .maybeSingle();
 
     if (findError) {
       return NextResponse.json({ error: "خطأ في الاتصال بقاعدة البيانات" }, { status: 500 });
     }
 
-    let userRecord = existingUser;
+    // ==========================
+    // 1. حالة تسجيل الدخول (LOGIN)
+    // ==========================
+    if (mode === "login") {
+      if (!existingUser) {
+        return NextResponse.json(
+          { error: "هذا الرقم غير مسجل، يرجى الانتقال لتبويب (إنشاء حساب جديد)" },
+          { status: 404 }
+        );
+      }
 
-    if (existingUser) {
-      // التحقق من كلمة المرور للحساب الموجود
       if (existingUser.password_hash !== passHash) {
-        return NextResponse.json({ error: "كلمة المرور غير صحيحة لهذا الرقم" }, { status: 401 });
+        return NextResponse.json({ error: "كلمة المرور غير صحيحة" }, { status: 401 });
       }
-      if (existingUser.role !== role) {
+
+      // منع دخول الورشة إذا لم يوافق عليها الأدمن بعد
+      if (!existingUser.is_active) {
         return NextResponse.json(
-          { error: `هذا الرقم مسجل مسبقاً كحساب ${existingUser.role === "workshop" ? "ورشة" : "مسوّق"}` },
-          { status: 400 }
-        );
-      }
-    } else {
-      // 2. إنشاء حساب جديد إذا لم يكن موجوداً
-      if (!name) {
-        return NextResponse.json({ error: "الاسم مطلوب لإنشاء الحساب" }, { status: 400 });
-      }
-
-      const specsArray = spec
-        ? spec.split(",").map((s: string) => s.trim()).filter(Boolean)
-        : [];
-
-      let newUser = null;
-      let insertError = null;
-
-      // محاولة الإدخال حتى 5 مرات في حال تصادم كود المسوق (خطأ 23505)
-      for (let attempt = 0; attempt < 5; attempt++) {
-        const generatedRefCode =
-          role === "marketer"
-            ? `MK-${crypto.randomBytes(3).toString("hex").toUpperCase()}`
-            : null;
-
-        const res = await supabaseAdmin
-          .from("users")
-          .insert({
-            role,
-            name,
-            phone,
-            password_hash: passHash,
-            license: role === "workshop" ? license : null,
-            city: role === "workshop" ? city : null,
-            specs: specsArray,
-            my_ref_code: generatedRefCode,
-            referred_by_code: role === "workshop" && refCode ? refCode : null,
-          })
-          .select("*")
-          .single();
-
-        if (!res.error) {
-          newUser = res.data;
-          insertError = null;
-          break;
-        }
-
-        insertError = res.error;
-
-        const isRefCollision =
-          res.error.code === "23505" &&
-          res.error.message?.includes("my_ref_code");
-
-        if (!isRefCollision) {
-          break;
-        }
-      }
-
-      if (insertError || !newUser) {
-        return NextResponse.json(
-          { error: insertError?.message || "تعذر إنشاء الحساب في قاعدة البيانات" },
-          { status: 500 }
+          {
+            pendingApproval: true,
+            error: "حساب الورشة/الشركة الخاص بك قيد المراجعة حالياً من قِبل الإدارة. سيتم تفعيله فور التحقق من البيانات.",
+          },
+          { status: 403 }
         );
       }
 
-      userRecord = newUser;
+      const sessionPayload = {
+        id: existingUser.id,
+        role: existingUser.role,
+        name: existingUser.name,
+        phone: existingUser.phone,
+        my_ref_code: existingUser.my_ref_code,
+      };
+
+      const token = sign(sessionPayload);
+      cookies().set(COOKIE_NAME, token, {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 24 * 30,
+      });
+
+      return NextResponse.json({ ok: true, user: sessionPayload });
     }
 
-    // 3. إنشاء جلسة موقعة وحفظها في الكوكيز
+    // ==========================
+    // 2. حالة إنشاء حساب جديد (REGISTER)
+    // ==========================
+    if (existingUser) {
+      return NextResponse.json(
+        { error: "رقم الموبايل هذا مسجل مسبقاً! انتقل لتبويب (تسجيل الدخول)" },
+        { status: 400 }
+      );
+    }
+
+    if (!name || !role) {
+      return NextResponse.json({ error: "يرجى إكمال جميع الحقول المطلوبة" }, { status: 400 });
+    }
+
+    if (role === "workshop" && (!license || !city || !spec)) {
+      return NextResponse.json(
+        { error: "يرجى إدخال رقم الترخيص والمدينة واختصاص الماركات للورشة" },
+        { status: 400 }
+      );
+    }
+
+    const specsArray = spec
+      ? spec.split(",").map((s: string) => s.trim()).filter(Boolean)
+      : [];
+
+    // الورشة تكون غير مفعلة (false) بانتظار موافقة الأدمن، بينما المسوق/العميل يتفعل فوراً (true)
+    const isActiveInitial = role === "workshop" ? false : true;
+
+    let newUser = null;
+    let insertError = null;
+
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const generatedRefCode =
+        role === "marketer"
+          ? `MK-${crypto.randomBytes(3).toString("hex").toUpperCase()}`
+          : null;
+
+      const res = await supabaseAdmin
+        .from("users")
+        .insert({
+          role,
+          name: String(name).trim(),
+          phone: cleanPhone,
+          password_hash: passHash,
+          license: role === "workshop" ? String(license).trim() : null,
+          city: role === "workshop" ? String(city).trim() : null,
+          specs: specsArray,
+          my_ref_code: generatedRefCode,
+          referred_by_code: role === "workshop" && refCode ? String(refCode).trim() : null,
+          is_active: isActiveInitial,
+        })
+        .select("*")
+        .single();
+
+      if (!res.error) {
+        newUser = res.data;
+        insertError = null;
+        break;
+      }
+
+      insertError = res.error;
+      const isRefCollision =
+        res.error.code === "23505" && res.error.message?.includes("my_ref_code");
+
+      if (!isRefCollision) break;
+    }
+
+    if (insertError || !newUser) {
+      return NextResponse.json(
+        { error: insertError?.message || "تعذر إنشاء الحساب في قاعدة البيانات" },
+        { status: 500 }
+      );
+    }
+
+    // إذا كان حساب ورشة، لا نقوم بتسجيل دخوله فوراً بل نرسل إشعار بانتظار موافقة الإدارة
+    if (role === "workshop") {
+      return NextResponse.json({
+        ok: true,
+        pendingApproval: true,
+        message: "تم إرسال طلب تسجيل الورشة/الشركة للإدارة بنجاح! سيتم مراجعة الترخيص وتفعيل حسابك قريباً.",
+      });
+    }
+
+    // أما المسوق/العميل يتم تسجيل دخوله مباشرة
     const sessionPayload = {
-      id: userRecord.id,
-      role: userRecord.role,
-      name: userRecord.name,
-      phone: userRecord.phone,
-      my_ref_code: userRecord.my_ref_code,
+      id: newUser.id,
+      role: newUser.role,
+      name: newUser.name,
+      phone: newUser.phone,
+      my_ref_code: newUser.my_ref_code,
     };
 
     const token = sign(sessionPayload);
@@ -172,7 +230,7 @@ export async function POST(req: Request) {
       httpOnly: true,
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 24 * 30, // 30 يوم
+      maxAge: 60 * 60 * 24 * 30,
     });
 
     return NextResponse.json({ ok: true, user: sessionPayload });
