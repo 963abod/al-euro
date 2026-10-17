@@ -1,116 +1,148 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import crypto from "crypto";
+import { supabaseAdmin } from "@/lib/supabase";
 
-const SECRET = process.env.AUTH_SECRET;
+const COOKIE_NAME = "euro_session";
+const SECRET = process.env.AUTH_SECRET || "al-euro-default-secret-key-2026";
 
-function sign(payload: string) {
-  if (!SECRET) {
-    throw new Error("AUTH_SECRET is not defined");
-  }
-  const sig = crypto.createHmac("sha256", SECRET).update(payload).digest("base64url");
-  return `${Buffer.from(payload).toString("base64url")}.${sig}`;
+function sign(payload: object): string {
+  const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  const sig = crypto.createHmac("sha256", SECRET).update(data).digest("base64url");
+  return data + "." + sig;
 }
 
-function verify(token: string) {
-  if (!SECRET) return null;
+function verify(token: string): any | null {
+  const [data, sig] = token.split(".");
+  if (!data || !sig) return null;
+  const expected = crypto.createHmac("sha256", SECRET).update(data).digest("base64url");
+  if (sig !== expected) return null;
   try {
-    const [dataB64, sig] = token.split(".");
-    if (!dataB64 || !sig) return null;
-    const payload = Buffer.from(dataB64, "base64url").toString("utf8");
-    const expectedSig = crypto.createHmac("sha256", SECRET).update(payload).digest("base64url");
-
-    const sigBuf = Buffer.from(sig);
-    const expectedBuf = Buffer.from(expectedSig);
-    if (sigBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(sigBuf, expectedBuf)) {
-      return null;
-    }
-
-    const data = JSON.parse(payload);
-    if (
-      typeof data.iat !== "number" ||
-      data.iat <= 0 ||
-      Date.now() - data.iat > 7 * 24 * 60 * 60 * 1000 ||
-      data.iat > Date.now() + 60_000
-    ) {
-      return null;
-    }
-    if (data.role !== "workshop" && data.role !== "marketer") return null;
-    if (typeof data.name !== "string" || typeof data.phone !== "string") return null;
-    return data;
+    return JSON.parse(Buffer.from(data, "base64url").toString("utf8"));
   } catch {
     return null;
   }
 }
 
+function hashPassword(password: string): string {
+  return crypto.createHmac("sha256", SECRET).update(password).digest("hex");
+}
+
+// جلب بيانات المستخدم الحالي من الجلسة + قاعدة البيانات
+export async function GET() {
+  const token = cookies().get(COOKIE_NAME)?.value;
+  if (!token) return NextResponse.json({ user: null });
+
+  const session = verify(token);
+  if (!session?.id) return NextResponse.json({ user: null });
+
+  const { data: user } = await supabaseAdmin
+    .from("users")
+    .select("id, role, name, phone, city, specs, tier, debt_limit, debt_balance, cashback_balance, my_ref_code")
+    .eq("id", session.id)
+    .single();
+
+  return NextResponse.json({ user: user || session });
+}
+
+// تسجيل دخول أو إنشاء حساب جديد في Supabase
 export async function POST(req: Request) {
   try {
-    if (!SECRET) {
-      return NextResponse.json({ error: "إعدادات الأمان غير مكتملة على الخادم" }, { status: 500 });
-    }
-
     const body = await req.json();
-    const { role, name, phone, license, city, spec, refCode, password } = body;
+    const { role, name, phone, password, license, city, spec, refCode } = body;
 
-    if (role !== "workshop" && role !== "marketer") {
-      return NextResponse.json({ error: "نوع الحساب غير صالح" }, { status: 400 });
+    if (!phone || !password || !role) {
+      return NextResponse.json({ error: "يرجى إدخال رقم الموبايل وكلمة المرور" }, { status: 400 });
     }
 
-    if (
-      typeof name !== "string" || !name.trim() ||
-      typeof phone !== "string" || !phone.trim() ||
-      typeof password !== "string" || password.length < 8
-    ) {
-      return NextResponse.json({ error: "يرجى إدخال كافة الحقول الأساسية وكلمة مرور من 8 أحرف على الأقل" }, { status: 400 });
+    const passHash = hashPassword(password);
+
+    // 1. فحص إذا كان الحساب موجود مسبقاً برقم الموبايل
+    const { data: existingUser } = await supabaseAdmin
+      .from("users")
+      .select("*")
+      .eq("phone", phone)
+      .maybeSingle();
+
+    let userRecord = existingUser;
+
+    if (existingUser) {
+      // التحقق من كلمة المرور للحساب الموجود
+      if (existingUser.password_hash !== passHash) {
+        return NextResponse.json({ error: "كلمة المرور غير صحيحة لهذا الرقم" }, { status: 401 });
+      }
+      if (existingUser.role !== role) {
+        return NextResponse.json(
+          { error: "هذا الرقم مسجل مسبقاً كحساب " + (existingUser.role === "workshop" ? "ورشة" : "مسوّق") },
+          { status: 400 }
+        );
+      }
+    } else {
+      // 2. إنشاء حساب جديد إذا لم يكن موجوداً
+      if (!name) {
+        return NextResponse.json({ error: "الاسم مطلوب لإنشاء الحساب" }, { status: 400 });
+      }
+
+      const specsArray = spec
+        ? spec.split(",").map((s: string) => s.trim()).filter(Boolean)
+        : [];
+
+      const generatedRefCode =
+        role === "marketer"
+          ? "MK-" + Math.floor(1000 + Math.random() * 9000)
+          : null;
+
+      const { data: newUser, error: insertError } = await supabaseAdmin
+        .from("users")
+        .insert({
+          role,
+          name,
+          phone,
+          password_hash: passHash,
+          license: role === "workshop" ? license : null,
+          city: role === "workshop" ? city : null,
+          specs: specsArray,
+          my_ref_code: generatedRefCode,
+          referred_by_code: role === "workshop" && refCode ? refCode : null,
+        })
+        .select("*")
+        .single();
+
+      if (insertError || !newUser) {
+        return NextResponse.json(
+          { error: insertError?.message || "تعذر إنشاء الحساب في قاعدة البيانات" },
+          { status: 500 }
+        );
+      }
+
+      userRecord = newUser;
     }
 
-    if (role === "workshop" && (
-      typeof license !== "string" || !license.trim() ||
-      typeof city !== "string" || !city.trim()
-    )) {
-      return NextResponse.json({ error: "رقم السجل التجاري/الصناعي والمدينة مطلوبان للورشات" }, { status: 400 });
-    }
+    // 3. إنشاء جلسة موقعة وحفظها في الكوكيز
+    const sessionPayload = {
+      id: userRecord.id,
+      role: userRecord.role,
+      name: userRecord.name,
+      phone: userRecord.phone,
+      my_ref_code: userRecord.my_ref_code,
+    };
 
-    const sessionData = JSON.stringify({
-      role,
-      name: name.trim(),
-      phone: phone.trim(),
-      ...(role === "workshop" ? {
-        license: license.trim(),
-        city: city.trim(),
-        spec: typeof spec === "string" ? spec : "",
-        refCode: typeof refCode === "string" ? refCode : ""
-      } : {}),
-      iat: Date.now(),
-    });
-
-    const token = sign(sessionData);
-    const res = NextResponse.json({ ok: true, role, name: name.trim() });
-
-    res.cookies.set("euro_session", token, {
+    const token = sign(sessionPayload);
+    cookies().set(COOKIE_NAME, token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
       path: "/",
-      maxAge: 60 * 60 * 24 * 7,
+      maxAge: 60 * 60 * 24 * 30, // 30 يوم
     });
 
-    return res;
-  } catch {
-    return NextResponse.json({ error: "خطأ في خادم المصادقة" }, { status: 500 });
+    return NextResponse.json({ ok: true, user: sessionPayload });
+  } catch (err: any) {
+    return NextResponse.json({ error: "حدث خطأ غير متوقع في الخادم" }, { status: 500 });
   }
 }
 
-export async function GET(req: Request) {
-  const cookieHeader = req.headers.get("cookie") || "";
-  const match = cookieHeader.match(/euro_session=([^;]+)/);
-  if (!match) return NextResponse.json({ user: null });
-
-  const user = verify(decodeURIComponent(match[1]));
-  return NextResponse.json({ user });
-}
-
+// تسجيل الخروج
 export async function DELETE() {
-  const res = NextResponse.json({ ok: true });
-  res.cookies.delete("euro_session");
-  return res;
+  cookies().delete(COOKIE_NAME);
+  return NextResponse.json({ ok: true });
 }
