@@ -1,287 +1,490 @@
 "use client";
-import {useState, useEffect} from "react";
-import {useRouter} from "next/navigation";
-import {Wrench, Share2, LogOut, AlertCircle} from "lucide-react";
-import {H} from "@/components/ui";
-import {BRANDS} from "@/lib/data";
+import React, { useState } from "react";
+import { Wrench, Share2, CheckCircle2, Clock, LogIn, UserPlus, ShieldCheck } from "lucide-react";
 
-export default function Login(){
-  const router = useRouter();
-  const [tab, setTab] = useState<"workshop"|"marketer">("workshop");
+const AVAILABLE_BRANDS = [
+  "Mercedes-Benz",
+  "BMW",
+  "Audi",
+  "Volkswagen",
+  "Range Rover",
+  "Porsche",
+  "أخرى",
+];
+
+export default function LoginPage() {
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
+  const [role, setRole] = useState<"workshop" | "marketer">("workshop");
+
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [license, setLicense] = useState("");
-  const [city, setCity] = useState("");
-
-  // اختيار عدة ماركات مع دعم خيار أخرى
-  const [selectedSpecs, setSelectedSpecs] = useState<string[]>([BRANDS[0] || "Mercedes-Benz"]);
-  const [otherSpec, setOtherSpec] = useState("");
-
+  const [city, setCity] = useState("حلب");
+  const [selectedBrands, setSelectedBrands] = useState<string[]>(["Mercedes-Benz"]);
+  const [otherBrandText, setOtherBrandText] = useState("");
   const [refCode, setRefCode] = useState("");
+
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [currentUser, setCurrentUser] = useState<{role: "workshop"|"marketer"; name: string} | null>(null);
+  const [msg, setMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [pendingNotice, setPendingNotice] = useState("");
 
-  useEffect(()=>{
-    fetch("/api/auth")
-      .then(r => r.json())
-      .then(d => {
-        if(d?.user){
-          setCurrentUser(d.user);
-          setTab(d.user.role);
-        }
-      })
-      .catch(()=>{});
-  },[]);
-
-  const toggleSpec = (b: string) => {
-    if (selectedSpecs.includes(b)) {
-      if (selectedSpecs.length > 1) {
-        setSelectedSpecs(selectedSpecs.filter(item => item !== b));
-      }
-    } else {
-      setSelectedSpecs([...selectedSpecs, b]);
-    }
+  const toggleBrand = (brand: string) => {
+    setSelectedBrands((prev) =>
+      prev.includes(brand) ? prev.filter((b) => b !== brand) : [...prev, brand]
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setErrorMsg("");
+    setMsg("");
+    setPendingNotice("");
+
+    let finalSpecs = "";
+    if (authMode === "register" && role === "workshop") {
+      if (selectedBrands.length === 0) {
+        setErrorMsg("يرجى اختيار ماركة واحدة على الأقل لاختصاص الورشة");
+        return;
+      }
+      if (selectedBrands.includes("أخرى") && !otherBrandText.trim()) {
+        setErrorMsg("يرجى كتابة اسم الماركة الإضافية في حقل (أخرى)");
+        return;
+      }
+      finalSpecs = selectedBrands
+        .map((b) => (b === "أخرى" ? `أخرى (${otherBrandText.trim()})` : b))
+        .join("، ");
+    }
+
     setLoading(true);
-
-    const finalSpecs = selectedSpecs.includes("أخرى") && otherSpec.trim()
-      ? [...selectedSpecs.filter(s => s !== "أخرى"), `أخرى: ${otherSpec.trim()}`]
-      : selectedSpecs;
-
     try {
       const res = await fetch("/api/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          role: tab,
-          name: name.trim(),
-          phone: phone.trim(),
+          mode: authMode,
+          role,
+          name,
+          phone,
           password,
-          license: tab === "workshop" ? license.trim() : undefined,
-          city: tab === "workshop" ? city.trim() : undefined,
-          spec: tab === "workshop" ? finalSpecs.join(", ") : undefined,
-          refCode: tab === "workshop" ? refCode.trim() : undefined,
+          license,
+          city,
+          spec: finalSpecs,
+          refCode,
         }),
       });
-
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "فشل تسجيل الدخول، تأكد من البيانات");
-        setLoading(false);
+
+      if (data.pendingApproval) {
+        setPendingNotice(
+          data.message ||
+            data.error ||
+            "حساب الورشة قيد المراجعة من قبل الإدارة. سيتم تفعيله بعد التحقق من البيانات."
+        );
         return;
       }
 
-      router.push(tab === "workshop" ? "/workshop" : "/marketer");
-      router.refresh();
+      if (!res.ok || !data.ok) {
+        setErrorMsg(data.error || "تعذر إتمام العملية");
+        return;
+      }
+
+      setMsg("تم تسجيل الدخول بنجاح! جاري تحويلك...");
+      const targetRole = data.user?.role || role;
+      window.setTimeout(() => {
+        window.location.href = targetRole === "workshop" ? "/workshop" : "/marketer";
+      }, 800);
     } catch {
-      setError("حدث خطأ في الاتصال بالخادم");
+      setErrorMsg("خطأ في الاتصال بالخادم");
+    } finally {
       setLoading(false);
     }
   };
 
-  const handleLogout = async () => {
-    await fetch("/api/auth", { method: "DELETE" });
-    setCurrentUser(null);
-    router.refresh();
-  };
+  return (
+    <div style={{ maxWidth: 680, margin: "0 auto", padding: "24px 16px" }}>
+      <div style={{ textAlign: "center", marginBottom: 22 }}>
+        <h1 style={{ fontSize: 26, fontWeight: 900, marginBottom: 6 }}>
+          بوابة الحسابات — اليورو
+        </h1>
+        <p style={{ color: "var(--muted)", fontSize: 14 }}>
+          سجّل دخولك أو أنشئ حساباً جديداً للوصول إلى خدمات المنصة
+        </p>
+      </div>
 
-  return(<>
-    <H t="تسجيل الدخول والحسابات" s="اختر نوع حسابك للوصول إلى الخدمات المخصصة لك"/>
+      {/* التبديل الرئيسي: تسجيل الدخول / إنشاء حساب جديد */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 8,
+          background: "rgba(255,255,255,0.03)",
+          padding: 6,
+          borderRadius: 16,
+          border: "1px solid var(--border)",
+          marginBottom: 22,
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => {
+            setAuthMode("login");
+            setErrorMsg("");
+            setPendingNotice("");
+            setMsg("");
+          }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            padding: "12px 16px",
+            borderRadius: 12,
+            fontWeight: 800,
+            fontSize: 14,
+            cursor: "pointer",
+            border: "none",
+            background: authMode === "login" ? "var(--primary, #2563eb)" : "transparent",
+            color: authMode === "login" ? "#fff" : "var(--muted)",
+            transition: "0.2s",
+          }}
+        >
+          <LogIn size={18} />
+          تسجيل الدخول
+        </button>
 
-    <div className="mx-auto max-w-xl">
-      {currentUser && (
-        <div className="mb-6 flex items-center justify-between rounded-[24px] border border-[#0A84FF]/30 bg-gradient-to-b from-[#0A84FF]/[0.12] to-white/[0.03] p-4 backdrop-blur-2xl saturate-150 shadow-[0_10px_32px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.25)] transition-all duration-300">
-          <div>
-            <p className="text-xs text-white/45">مسجّل الدخول حالياً كـ:</p>
-            <p className="font-semibold tracking-tight text-white">
-              {currentUser.name} ({currentUser.role === "workshop" ? "حساب ورشة / شركة" : "حساب عميل / مسوّق"})
-            </p>
-          </div>
+        <button
+          type="button"
+          onClick={() => {
+            setAuthMode("register");
+            setErrorMsg("");
+            setPendingNotice("");
+            setMsg("");
+          }}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            padding: "12px 16px",
+            borderRadius: 12,
+            fontWeight: 800,
+            fontSize: 14,
+            cursor: "pointer",
+            border: "none",
+            background: authMode === "register" ? "var(--primary, #2563eb)" : "transparent",
+            color: authMode === "register" ? "#fff" : "var(--muted)",
+            transition: "0.2s",
+          }}
+        >
+          <UserPlus size={18} />
+          إنشاء حساب جديد
+        </button>
+      </div>
+
+      {/* إشعار انتظار موافقة الإدارة للورشات */}
+      {pendingNotice && (
+        <div
+          className="card"
+          style={{
+            padding: 20,
+            marginBottom: 20,
+            border: "1px solid rgba(245, 158, 11, 0.45)",
+            background: "rgba(245, 158, 11, 0.08)",
+            textAlign: "center",
+          }}
+        >
+          <Clock size={36} style={{ color: "#f59e0b", margin: "0 auto 10px" }} />
+          <h3 style={{ fontSize: 17, fontWeight: 800, color: "#fbbf24", marginBottom: 6 }}>
+            طلبك قيد المراجعة لدى الإدارة
+          </h3>
+          <p style={{ fontSize: 13.5, color: "var(--text)", lineHeight: 1.7 }}>
+            {pendingNotice}
+          </p>
+        </div>
+      )}
+
+      {/* في حال إنشاء حساب جديد: اختيار نوع الحساب */}
+      {authMode === "register" && (
+        <div
+          className="card"
+          style={{
+            padding: 10,
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 10,
+            marginBottom: 20,
+          }}
+        >
           <button
             type="button"
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 rounded-full border border-[#FF453A]/40 bg-[#FF453A]/20 px-3 py-2 text-xs font-medium text-[#FF6961] shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] transition-all hover:bg-[#FF453A]/30 active:scale-[0.97]"
+            onClick={() => setRole("workshop")}
+            style={{
+              padding: 14,
+              borderRadius: 12,
+              cursor: "pointer",
+              border:
+                role === "workshop"
+                  ? "1.5px solid var(--primary)"
+                  : "1px solid var(--border)",
+              background:
+                role === "workshop" ? "rgba(37, 99, 235, 0.12)" : "transparent",
+              color: "var(--text)",
+              textAlign: "center",
+            }}
           >
-            <LogOut size={14}/>
-            تسجيل الخروج
+            <Wrench size={20} style={{ margin: "0 auto 6px", color: "#3b82f6" }} />
+            <div style={{ fontWeight: 800, fontSize: 14 }}>حساب ورشة / شركة</div>
+            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
+              شراء آجل، دفتر ديون، كاش باك (يتطلب موافقة الإدارة)
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setRole("marketer")}
+            style={{
+              padding: 14,
+              borderRadius: 12,
+              cursor: "pointer",
+              border:
+                role === "marketer"
+                  ? "1.5px solid var(--accent)"
+                  : "1px solid var(--border)",
+              background:
+                role === "marketer" ? "rgba(245, 158, 11, 0.12)" : "transparent",
+              color: "var(--text)",
+              textAlign: "center",
+            }}
+          >
+            <Share2 size={20} style={{ margin: "0 auto 6px", color: "#f59e0b" }} />
+            <div style={{ fontWeight: 800, fontSize: 14 }}>حساب عميل / مسوّق</div>
+            <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
+              شراء مباشر + عمولات تسويق 2% (تفعيل فوري)
+            </div>
           </button>
         </div>
       )}
 
-      <div className="mb-6 grid grid-cols-2 gap-1.5 rounded-2xl border border-white/[0.08] bg-black/40 p-1.5 backdrop-blur-xl shadow-inner">
-        <button
-          type="button"
-          onClick={()=>{setTab("workshop"); setError("");}}
-          className={`flex flex-col items-center gap-2 rounded-xl border p-4 transition-all ${
-            tab==="workshop"
-              ? "border-white/[0.22] bg-white/[0.15] text-white backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.3)]"
-              : "border-transparent text-white/60 hover:bg-white/[0.05] hover:text-white"
-          }`}
-        >
-          <Wrench size={24}/>
-          <div className="text-sm font-semibold">حساب ورشة / شركة</div>
-          <span className="text-[11px] opacity-75">شراء آجل، دفتر ديون، كاش باك</span>
-        </button>
+      {/* نموذج الإدخال */}
+      <form
+        onSubmit={handleSubmit}
+        className="card"
+        style={{ padding: 24, display: "grid", gap: 14 }}
+      >
+        <div style={{ borderBottom: "1px solid var(--border)", paddingBottom: 12 }}>
+          <h2 style={{ fontSize: 18, fontWeight: 800 }}>
+            {authMode === "login"
+              ? "تسجيل الدخول إلى حسابك"
+              : role === "workshop"
+              ? "طلب اعتماد ورشة أو شركة جديدة"
+              : "إنشاء حساب عميل / مسوّق فوري"}
+          </h2>
+          <p style={{ fontSize: 12, color: "var(--muted)", marginTop: 4 }}>
+            {authMode === "login"
+              ? "أدخل رقم الموبايل وكلمة المرور المسجلين لدينا"
+              : role === "workshop"
+              ? "يرجى إدخال بيانات الترخيص بدقة ليتم تفعيل الحساب وسقف الدين من قبل الإدارة"
+              : "حساب موحد للشراء المباشر وكسب عمولات دعوة الورشات"}
+          </p>
+        </div>
 
-        <button
-          type="button"
-          onClick={()=>{setTab("marketer"); setError("");}}
-          className={`flex flex-col items-center gap-2 rounded-xl border p-4 transition-all ${
-            tab==="marketer"
-              ? "border-white/[0.22] bg-white/[0.15] text-white backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.3)]"
-              : "border-transparent text-white/60 hover:bg-white/[0.05] hover:text-white"
-          }`}
-        >
-          <Share2 size={24}/>
-          <div className="text-sm font-semibold">حساب عميل / مسوّق</div>
-          <span className="text-[11px] opacity-75">شراء مباشر + عمولات تسويق 2%</span>
-        </button>
-      </div>
-
-      <form onSubmit={handleSubmit} className="grid gap-4 rounded-[24px] border border-white/[0.14] bg-gradient-to-b from-white/[0.09] to-white/[0.03] p-5 backdrop-blur-2xl saturate-150 shadow-[0_10px_32px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.25)] transition-all duration-300">
-        {error && (
-          <div className="flex items-center gap-2 rounded-2xl border border-[#FF453A]/40 bg-[#FF453A]/20 p-3 text-xs text-[#FF6961] shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
-            <AlertCircle size={16} className="shrink-0"/>
-            <span>{error}</span>
-          </div>
+        {authMode === "register" && (
+          <input
+            className="input"
+            placeholder={
+              role === "workshop" ? "اسم الورشة أو الشركة الرسمي" : "الاسم الكامل"
+            }
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
         )}
 
-        {tab === "workshop" ? (
-          <>
-            <div className="border-b border-white/[0.10] pb-3">
-              <h3 className="font-semibold tracking-tight text-white">بيانات الورشة أو الشركة المعتمدة</h3>
-              <p className="text-xs text-white/45">تُستخدم لتفعيل سقف الدين الآجل ونظام المراتب</p>
-            </div>
+        <input
+          className="input"
+          type="tel"
+          placeholder="رقم الموبايل (09XXXXXXXX)"
+          value={phone}
+          onChange={(e) => setPhone(e.target.value)}
+          required
+        />
 
+        <input
+          className="input"
+          type="password"
+          placeholder="كلمة المرور"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+        />
+
+        {/* حقول إضافية خاصة بتسجيل ورشة جديدة فقط */}
+        {authMode === "register" && role === "workshop" && (
+          <>
             <input
-              className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25"
-              placeholder="اسم الورشة أو الشركة (مثال: ورشة الأمانة)"
-              value={name}
-              onChange={e=>setName(e.target.value)}
+              className="input"
+              placeholder="رقم السجل التجاري / ترخيص الورشة"
+              value={license}
+              onChange={(e) => setLicense(e.target.value)}
               required
             />
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <input
-                className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25"
-                dir="ltr"
-                placeholder="رقم الموبايل (09XXXXXXXX)"
-                value={phone}
-                onChange={e=>setPhone(e.target.value)}
-                required
-              />
-              <input
-                className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25"
-                type="password"
-                placeholder="كلمة المرور"
-                value={password}
-                onChange={e=>setPassword(e.target.value)}
-                required
-              />
-            </div>
+            <select
+              className="select"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+            >
+              <option value="حلب">المحافظة: حلب</option>
+              <option value="دمشق">المحافظة: دمشق</option>
+              <option value="حمص">المحافظة: حمص</option>
+              <option value="حماة">المحافظة: حماة</option>
+              <option value="اللاذقية">المحافظة: اللاذقية</option>
+              <option value="طرطوس">المحافظة: طرطوس</option>
+            </select>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <input
-                className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25"
-                placeholder="رقم السجل التجاري / الصناعي أو الترخيص"
-                value={license}
-                onChange={e=>setLicense(e.target.value)}
-                required
-              />
-              <input
-                className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25"
-                placeholder="المدينة والمنطقة الصناعية"
-                value={city}
-                onChange={e=>setCity(e.target.value)}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-xs text-white/45">اختصاص السيارات (يمكن اختيار أكثر من ماركة):</label>
-              <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-white/[0.08] bg-black/40 p-1.5 backdrop-blur-xl shadow-inner sm:grid-cols-3">
-                {[...BRANDS, "أخرى"].map(b => {
-                  const isSelected = selectedSpecs.includes(b);
+            <div
+              style={{
+                background: "rgba(255,255,255,0.02)",
+                border: "1px solid var(--border)",
+                borderRadius: 12,
+                padding: 14,
+              }}
+            >
+              <label
+                style={{
+                  display: "block",
+                  fontSize: 12,
+                  fontWeight: 800,
+                  marginBottom: 10,
+                  color: "var(--muted)",
+                }}
+              >
+                اختصاص الورشة (يمكنك اختيار أكثر من ماركة):
+              </label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {AVAILABLE_BRANDS.map((brand) => {
+                  const active = selectedBrands.includes(brand);
                   return (
                     <button
+                      key={brand}
                       type="button"
-                      key={b}
-                      onClick={()=>toggleSpec(b)}
-                      className={`rounded-xl border p-2 text-xs transition-all ${
-                        isSelected
-                          ? "border-white/[0.22] bg-white/[0.15] font-semibold text-white backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.3)]"
-                          : "border-transparent font-medium text-white/60 hover:bg-white/[0.05] hover:text-white"
-                      }`}
+                      onClick={() => toggleBrand(brand)}
+                      style={{
+                        padding: "7px 12px",
+                        borderRadius: 8,
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        border: active
+                          ? "1.5px solid #3b82f6"
+                          : "1px solid var(--border)",
+                        background: active
+                          ? "rgba(59, 130, 246, 0.18)"
+                          : "transparent",
+                        color: active ? "#60a5fa" : "var(--muted)",
+                      }}
                     >
-                      {b} {isSelected && "✓"}
+                      {active ? "✓ " : "+ "} {brand}
                     </button>
                   );
                 })}
               </div>
 
-              {selectedSpecs.includes("أخرى") && (
+              {selectedBrands.includes("أخرى") && (
                 <input
-                  className="mt-3 w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25"
-                  placeholder="اكتب نوع السيارات الأخرى..."
-                  value={otherSpec}
-                  onChange={e=>setOtherSpec(e.target.value)}
+                  className="input"
+                  style={{ marginTop: 10 }}
+                  placeholder="اكتب اسم الماركة أو الاختصاص الإضافي..."
+                  value={otherBrandText}
+                  onChange={(e) => setOtherBrandText(e.target.value)}
                   required
                 />
               )}
             </div>
 
             <input
-              className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25"
-              placeholder="كود المسوّق الذي دعاك (اختياري)"
+              className="input"
+              placeholder="كود المسوّق إن وجد (مثال: MK-8F4A2C)"
               value={refCode}
-              onChange={e=>setRefCode(e.target.value)}
+              onChange={(e) => setRefCode(e.target.value)}
             />
-          </>
-        ) : (
-          <>
-            <div className="border-b border-white/[0.10] pb-3">
-              <h3 className="font-semibold tracking-tight text-white">تسجيل عميل / مسوّق</h3>
-              <p className="text-xs text-white/45">حساب موحد للشراء المباشر وكسب عمولات دعوة الورشات</p>
-            </div>
 
-            <input
-              className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25"
-              placeholder="الاسم الكامل"
-              value={name}
-              onChange={e=>setName(e.target.value)}
-              required
-            />
-            <input
-              className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25"
-              dir="ltr"
-              placeholder="رقم الموبايل (09XXXXXXXX)"
-              value={phone}
-              onChange={e=>setPhone(e.target.value)}
-              required
-            />
-            <input
-              className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25"
-              type="password"
-              placeholder="كلمة المرور"
-              value={password}
-              onChange={e=>setPassword(e.target.value)}
-              required
-            />
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                fontSize: 12,
+                color: "#93c5fd",
+                background: "rgba(37, 99, 235, 0.08)",
+                padding: "10px 12px",
+                borderRadius: 10,
+              }}
+            >
+              <ShieldCheck size={18} />
+              <span>
+                حفاظاً على موثوقية التعامل الآجل، يتم تفعيل حسابات الورشات بعد مراجعة الإدارة.
+              </span>
+            </div>
           </>
         )}
 
-        <button type="submit" disabled={loading} className="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#3A9BFD] to-[#007AFF] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_4px_20px_rgba(0,122,255,0.45),inset_0_1px_1px_rgba(255,255,255,0.45)] transition-all hover:brightness-110 active:scale-[0.97] disabled:opacity-50">
+        <button
+          type="submit"
+          disabled={loading}
+          className={
+            authMode === "register" && role === "marketer"
+              ? "btn-accent"
+              : "btn-primary"
+          }
+          style={{ marginTop: 6, padding: 14, fontSize: 15 }}
+        >
           {loading
-            ? "جاري التحقق..."
-            : (tab === "workshop" ? "دخول / تفعيل حساب الورشة" : "دخول / تفعيل حساب العميل والمسوّق")}
+            ? "جاري المعالجة..."
+            : authMode === "login"
+            ? "تسجيل الدخول"
+            : role === "workshop"
+            ? "إرسال طلب اعتماد الورشة للإدارة"
+            : "إنشاء حساب عميل / مسوّق فوراً"}
         </button>
+
+        {errorMsg && (
+          <div
+            style={{
+              padding: 12,
+              borderRadius: 10,
+              background: "rgba(239, 68, 68, 0.12)",
+              color: "#f87171",
+              fontSize: 13,
+              fontWeight: 700,
+              textAlign: "center",
+            }}
+          >
+            {errorMsg}
+          </div>
+        )}
+
+        {msg && (
+          <div
+            style={{
+              padding: 12,
+              borderRadius: 10,
+              background: "rgba(16, 185, 129, 0.12)",
+              color: "#34d399",
+              fontSize: 13,
+              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 6,
+            }}
+          >
+            <CheckCircle2 size={16} /> {msg}
+          </div>
+        )}
       </form>
     </div>
-  </>);
+  );
 }
