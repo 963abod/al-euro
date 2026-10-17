@@ -27,20 +27,24 @@ export default function Shell({
     [user, setUser] = useState<{
       role: "workshop" | "marketer";
       name: string;
-    } | null>(null);
+    } | null>(null),
+    [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch("/api/auth")
       .then((r) => r.json())
       .then((d) => setUser(d?.user || null))
-      .catch(() => setUser(null));
-  }, [p]);
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
+  }, []);
 
   const NAV = [
     ["/", "الكتالوج", Store],
     ["/cart", "السلة", ShoppingCart],
     ["/special", "طلب خاص", PackageSearch],
-    ...(user?.role === "workshop"
+    ...(loading
+      ? [["/login", "حسابي", UserCheck] as const]
+      : user?.role === "workshop"
       ? [["/workshop", "الورشة", Wrench] as const]
       : user?.role === "marketer"
       ? [["/marketer", "المسوّق والعميل", Share2] as const]
@@ -103,7 +107,9 @@ export default function Shell({
             >
               <UserCheck size={15} className="text-[#0A84FF]" />
               <span>
-                {user
+                {loading
+                  ? "جاري التحقق..."
+                  : user
                   ? `${user.name} (${
                       user.role === "workshop"
                         ? "ورشة"
