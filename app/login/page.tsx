@@ -2,6 +2,23 @@
 import React, { useState } from "react";
 import { Wrench, Share2, CheckCircle2, Clock, LogIn, UserPlus, ShieldCheck } from "lucide-react";
 
+const SYRIAN_CITIES = [
+  "دمشق",
+  "ريف دمشق",
+  "حلب",
+  "حمص",
+  "حماة",
+  "اللاذقية",
+  "طرطوس",
+  "إدلب",
+  "دير الزور",
+  "الرقة",
+  "الحسكة",
+  "درعا",
+  "السويداء",
+  "القنيطرة",
+];
+
 const AVAILABLE_BRANDS = [
   "Mercedes-Benz",
   "BMW",
@@ -329,19 +346,43 @@ export default function LoginPage() {
               style={{ background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: "10px 12px", fontSize: 13 }}
             />
 
-            <select
-              className="select"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              style={{ background: "rgba(0,0,0,0.3)", borderRadius: 10, padding: "10px 12px", fontSize: 13, color: "#fff" }}
+            {/* اختيار المحافظة بستايل زجاجي احترافي متناسق */}
+            <div
+              style={{
+                background: "rgba(0,0,0,0.15)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                borderRadius: 10,
+                padding: 10,
+              }}
             >
-              <option value="حلب" style={{ background: "#111" }}>المحافظة: حلب</option>
-              <option value="دمشق" style={{ background: "#111" }}>المحافظة: دمشق</option>
-              <option value="حمص" style={{ background: "#111" }}>المحافظة: حمص</option>
-              <option value="حماة" style={{ background: "#111" }}>المحافظة: حماة</option>
-              <option value="اللاذقية" style={{ background: "#111" }}>المحافظة: اللاذقية</option>
-              <option value="طرطوس" style={{ background: "#111" }}>المحافظة: طرطوس</option>
-            </select>
+              <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, marginBottom: 8, color: "var(--muted)" }}>
+                اختر المحافظة:
+              </label>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, maxHeight: 150, overflowY: "auto" }}>
+                {SYRIAN_CITIES.map((c) => {
+                  const active = city === c;
+                  return (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setCity(c)}
+                      style={{
+                        padding: "5px 10px",
+                        borderRadius: 8,
+                        fontSize: 11.5,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        border: active ? "1px solid #3b82f6" : "1px solid rgba(255,255,255,0.08)",
+                        background: active ? "rgba(59, 130, 246, 0.25)" : "transparent",
+                        color: active ? "#93c5fd" : "var(--muted)",
+                      }}
+                    >
+                      {active ? "✓ " : ""} {c}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
 
             <div
               style={{
