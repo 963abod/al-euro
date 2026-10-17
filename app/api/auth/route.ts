@@ -92,7 +92,7 @@ export async function POST(req: Request) {
 
       const generatedRefCode =
         role === "marketer"
-          ? "MK-" + Math.floor(1000 + Math.random() * 9000)
+          ? `MK-${crypto.randomBytes(3).toString("hex").toUpperCase()}`
           : null;
 
       const { data: newUser, error: insertError } = await supabaseAdmin
