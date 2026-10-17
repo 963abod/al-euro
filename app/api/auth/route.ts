@@ -198,9 +198,22 @@ export async function POST(req: Request) {
       if (!isRefCollision) break;
     }
 
-    if (insertError || !newUser) {
+    if (insertError) {
+      if (insertError.code === "23505") {
+        return NextResponse.json(
+          { error: "هذا الرقم مسجل مسبقاً بنفس نوع الحساب هذا، يرجى الانتقال لتسجيل الدخول." },
+          { status: 400 }
+        );
+      }
       return NextResponse.json(
-        { error: insertError?.message || "تعذر إنشاء الحساب في قاعدة البيانات" },
+        { error: insertError.message || "تعذر إنشاء الحساب في قاعدة البيانات" },
+        { status: 500 }
+      );
+    }
+
+    if (!newUser) {
+      return NextResponse.json(
+        { error: "تعذر إنشاء الحساب في قاعدة البيانات" },
         { status: 500 }
       );
     }
