@@ -70,7 +70,7 @@ export default function LoginPage() {
       }
       finalSpecs = selectedBrands
         .map((b) => (b === "أخرى" ? "أخرى (" + otherBrandText.trim() + ")" : b))
-        .join("، ");
+        .join(", ");
     }
 
     setLoading(true);
@@ -249,63 +249,65 @@ export default function LoginPage() {
         </div>
       ) : (
         <>
-          {/* اختيار نوع الحساب عند التسجيل */}
-          {authMode === "register" && (
-            <div
+          {/* اختيار نوع الحساب (متاح في الدخول وفي إنشاء الحساب) */}
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 10,
+              marginBottom: 16,
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => setRole("workshop")}
               style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 10,
-                marginBottom: 16,
+                padding: "12px 10px",
+                borderRadius: 14,
+                cursor: "pointer",
+                border:
+                  role === "workshop"
+                    ? "1.5px solid #3b82f6"
+                    : "1px solid rgba(255, 255, 255, 0.08)",
+                background:
+                  role === "workshop" ? "rgba(59, 130, 246, 0.15)" : "rgba(255, 255, 255, 0.02)",
+                color: "var(--text)",
+                textAlign: "center",
+                transition: "0.2s",
               }}
             >
-              <button
-                type="button"
-                onClick={() => setRole("workshop")}
-                style={{
-                  padding: "12px 10px",
-                  borderRadius: 14,
-                  cursor: "pointer",
-                  border:
-                    role === "workshop"
-                      ? "1.5px solid #3b82f6"
-                      : "1px solid rgba(255, 255, 255, 0.08)",
-                  background:
-                    role === "workshop" ? "rgba(59, 130, 246, 0.15)" : "rgba(255, 255, 255, 0.02)",
-                  color: "var(--text)",
-                  textAlign: "center",
-                  transition: "0.2s",
-                }}
-              >
-                <Wrench size={18} style={{ margin: "0 auto 4px", color: "#60a5fa" }} />
-                <div style={{ fontWeight: 700, fontSize: 13 }}>ورشة / شركة</div>
-                <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 2 }}>يتطلب موافقة الإدارة</div>
-              </button>
+              <Wrench size={18} style={{ margin: "0 auto 4px", color: "#60a5fa" }} />
+              <div style={{ fontWeight: 700, fontSize: 13 }}>حساب ورشة / شركة</div>
+              <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 2 }}>
+                {authMode === "login" ? "تسجيل دخول الورش" : "يتطلب موافقة الإدارة"}
+              </div>
+            </button>
 
-              <button
-                type="button"
-                onClick={() => setRole("marketer")}
-                style={{
-                  padding: "12px 10px",
-                  borderRadius: 14,
-                  cursor: "pointer",
-                  border:
-                    role === "marketer"
-                      ? "1.5px solid #f59e0b"
-                      : "1px solid rgba(255, 255, 255, 0.08)",
-                  background:
-                    role === "marketer" ? "rgba(245, 158, 11, 0.15)" : "rgba(255, 255, 255, 0.02)",
-                  color: "var(--text)",
-                  textAlign: "center",
-                  transition: "0.2s",
-                }}
-              >
-                <Share2 size={18} style={{ margin: "0 auto 4px", color: "#fbbf24" }} />
-                <div style={{ fontWeight: 700, fontSize: 13 }}>عميل / مسوّق</div>
-                <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 2 }}>تفعيل فوري</div>
-              </button>
-            </div>
-          )}
+            <button
+              type="button"
+              onClick={() => setRole("marketer")}
+              style={{
+                padding: "12px 10px",
+                borderRadius: 14,
+                cursor: "pointer",
+                border:
+                  role === "marketer"
+                    ? "1.5px solid #f59e0b"
+                    : "1px solid rgba(255, 255, 255, 0.08)",
+                background:
+                  role === "marketer" ? "rgba(245, 158, 11, 0.15)" : "rgba(255, 255, 255, 0.02)",
+                color: "var(--text)",
+                textAlign: "center",
+                transition: "0.2s",
+              }}
+            >
+              <Share2 size={18} style={{ margin: "0 auto 4px", color: "#fbbf24" }} />
+              <div style={{ fontWeight: 700, fontSize: 13 }}>حساب عميل / مسوّق</div>
+              <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 2 }}>
+                {authMode === "login" ? "تسجيل دخول المسوقين" : "تفعيل فوري"}
+              </div>
+            </button>
+          </div>
 
           {/* نموذج الإدخال الأساسي */}
           <form
@@ -323,7 +325,9 @@ export default function LoginPage() {
             <div style={{ paddingBottom: 8, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
               <h2 style={{ fontSize: 16, fontWeight: 800 }}>
                 {authMode === "login"
-                  ? "تسجيل الدخول"
+                  ? role === "workshop"
+                    ? "تسجيل دخول ورشة / شركة"
+                    : "تسجيل دخول عميل / مسوّق"
                   : role === "workshop"
                   ? "بيانات اعتماد الورشة الجديدة"
                   : "بيانات حساب المسوّق الجديد"}
@@ -543,7 +547,9 @@ export default function LoginPage() {
               {loading
                 ? "جاري المعالجة..."
                 : authMode === "login"
-                ? "تسجيل الدخول"
+                ? role === "workshop"
+                  ? "تسجيل دخول الورشة / الشركة"
+                  : "تسجيل دخول المسوّق"
                 : role === "workshop"
                 ? "إرسال طلب اعتماد الورشة"
                 : "إنشاء الحساب فوراً"}
