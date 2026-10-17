@@ -45,6 +45,7 @@ export default function LoginPage() {
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [msg, setMsg] = useState("");
   const [pendingNotice, setPendingNotice] = useState("");
 
   const toggleBrand = (brand: string) => {
@@ -56,6 +57,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
+    setMsg("");
     setPendingNotice("");
 
     let finalSpecs = "";
@@ -106,8 +108,19 @@ export default function LoginPage() {
         return;
       }
 
+      setMsg("تم بنجاح! جاري تحويلك...");
+
+      // التوجيه الفوري حسب نوع الحساب
       const targetRole = data.user?.role || role;
-      window.location.href = targetRole === "workshop" ? "/workshop" : "/marketer";
+      setTimeout(() => {
+        if (targetRole === "workshop") {
+          window.location.href = "/workshop";
+        } else if (targetRole === "marketer") {
+          window.location.href = "/marketer";
+        } else {
+          window.location.href = "/";
+        }
+      }, 500);
     } catch {
       setErrorMsg("خطأ في الاتصال بالخادم");
     } finally {
@@ -554,6 +567,22 @@ export default function LoginPage() {
                 ? "إرسال طلب اعتماد الورشة"
                 : "إنشاء الحساب فوراً"}
             </button>
+
+            {msg && (
+              <div
+                style={{
+                  padding: 10,
+                  borderRadius: 8,
+                  background: "rgba(48, 209, 88, 0.12)",
+                  color: "#30d158",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  textAlign: "center",
+                }}
+              >
+                {msg}
+              </div>
+            )}
 
             {errorMsg && (
               <div
