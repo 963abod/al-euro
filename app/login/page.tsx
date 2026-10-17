@@ -53,7 +53,7 @@ export default function LoginPage() {
         return;
       }
       finalSpecs = selectedBrands
-        .map((b) => (b === "أخرى" ? \`أخرى (\${otherBrandText.trim()})\` : b))
+        .map((b) => (b === "أخرى" ? "أخرى (" + otherBrandText.trim() + ")" : b))
         .join("، ");
     }
 
