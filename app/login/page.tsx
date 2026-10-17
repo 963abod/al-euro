@@ -1,6 +1,6 @@
 "use client";
 import React, { useState } from "react";
-import { Wrench, Share2, CheckCircle2, Clock, LogIn, UserPlus, ShieldCheck } from "lucide-react";
+import { Wrench, Share2, CheckCircle2, Clock, LogIn, UserPlus, ShieldCheck, ChevronDown } from "lucide-react";
 
 const SYRIAN_CITIES = [
   "دمشق",
@@ -43,7 +43,6 @@ export default function LoginPage() {
   const [refCode, setRefCode] = useState("");
 
   const [loading, setLoading] = useState(false);
-  const [msg, setMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [pendingNotice, setPendingNotice] = useState("");
 
@@ -56,7 +55,6 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
-    setMsg("");
     setPendingNotice("");
 
     let finalSpecs = "";
@@ -97,7 +95,7 @@ export default function LoginPage() {
         setPendingNotice(
           data.message ||
             data.error ||
-            "حساب الورشة قيد المراجعة من قبل الإدارة. سيتم تفعيله بعد التحقق من البيانات."
+            "تم إرسال طلب تسجيل الورشة/الشركة للإدارة بنجاح! سيتم مراجعة الترخيص وتفعيل حسابك قريباً."
         );
         return;
       }
@@ -107,11 +105,8 @@ export default function LoginPage() {
         return;
       }
 
-      setMsg("تم تسجيل الدخول بنجاح! جاري تحويلك...");
       const targetRole = data.user?.role || role;
-      setTimeout(() => {
-        window.location.href = targetRole === "workshop" ? "/workshop" : "/marketer";
-      }, 800);
+      window.location.href = targetRole === "workshop" ? "/workshop" : "/marketer";
     } catch {
       setErrorMsg("خطأ في الاتصال بالخادم");
     } finally {
@@ -121,7 +116,6 @@ export default function LoginPage() {
 
   return (
     <div style={{ maxWidth: 600, margin: "0 auto", padding: "20px 14px 100px" }}>
-      {/* الترويسة بستايل iOS نظيف */}
       <div style={{ textAlign: "center", marginBottom: 20 }}>
         <h1 style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.5px", marginBottom: 4 }}>
           حسابي — اليورو
@@ -131,7 +125,7 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {/* أزرار التبديل الفخمة (iOS Segmented Control) */}
+      {/* التبديل الرئيسي */}
       <div
         style={{
           display: "grid",
@@ -200,325 +194,331 @@ export default function LoginPage() {
         </button>
       </div>
 
-      {/* تنبيه موافقة الورشة */}
-      {pendingNotice && (
+      {/* شاشة النجاح الخاصة بانتظار موافقة الورشة (تخفي النموذج تماماً وتعرض التنبيه الفخم) */}
+      {pendingNotice ? (
         <div
           style={{
-            padding: 16,
-            borderRadius: 14,
-            background: "rgba(245, 158, 11, 0.1)",
-            border: "1px solid rgba(245, 158, 11, 0.3)",
+            padding: 30,
+            borderRadius: 20,
+            background: "rgba(245, 158, 11, 0.12)",
+            border: "1px solid rgba(245, 158, 11, 0.35)",
             textAlign: "center",
-            marginBottom: 16,
-            backdropFilter: "blur(10px)",
+            backdropFilter: "blur(12px)",
+            boxShadow: "0 10px 30px rgba(0,0,0,0.3)",
           }}
         >
-          <Clock size={30} style={{ color: "#fbbf24", margin: "0 auto 8px" }} />
-          <h3 style={{ fontSize: 15, fontWeight: 800, color: "#fbbf24", marginBottom: 4 }}>
-            الطلب قيد مراجعة الإدارة
-          </h3>
-          <p style={{ fontSize: 12.5, color: "var(--text)", lineHeight: 1.6 }}>
+          <div
+            style={{
+              width: 70,
+              height: 70,
+              borderRadius: "50%",
+              background: "rgba(245, 158, 11, 0.2)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              margin: "0 auto 16px",
+            }}
+          >
+            <Clock size={36} style={{ color: "#fbbf24" }} />
+          </div>
+          <h2 style={{ fontSize: 20, fontWeight: 900, color: "#fbbf24", marginBottom: 10 }}>
+            تم إرسال طلبك للمراجعة بنجاح!
+          </h2>
+          <p style={{ fontSize: 14, color: "var(--text)", lineHeight: 1.7, maxWidth: 420, margin: "0 auto 20px" }}>
             {pendingNotice}
           </p>
-        </div>
-      )}
-
-      {/* خيارات نوع الحساب عند التسجيل (بستايل بطاقات أبل المريحة) */}
-      {authMode === "register" && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 10,
-            marginBottom: 16,
-          }}
-        >
           <button
             type="button"
-            onClick={() => setRole("workshop")}
+            onClick={() => {
+              setPendingNotice("");
+              setAuthMode("login");
+            }}
             style={{
-              padding: "12px 10px",
-              borderRadius: 14,
+              padding: "10px 20px",
+              borderRadius: 10,
+              background: "rgba(255,255,255,0.1)",
+              color: "#fff",
+              border: "1px solid rgba(255,255,255,0.2)",
+              fontWeight: 700,
               cursor: "pointer",
-              border:
-                role === "workshop"
-                  ? "1.5px solid #3b82f6"
-                  : "1px solid rgba(255, 255, 255, 0.08)",
-              background:
-                role === "workshop" ? "rgba(59, 130, 246, 0.15)" : "rgba(255, 255, 255, 0.02)",
-              color: "var(--text)",
-              textAlign: "center",
-              transition: "0.2s",
             }}
           >
-            <Wrench size={18} style={{ margin: "0 auto 4px", color: "#60a5fa" }} />
-            <div style={{ fontWeight: 700, fontSize: 13 }}>ورشة / شركة</div>
-            <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 2 }}>يتطلب موافقة الإدارة</div>
+            العودة لتسجيل الدخول
           </button>
+        </div>
+      ) : (
+        <>
+          {/* اختيار نوع الحساب عند التسجيل */}
+          {authMode === "register" && (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 10,
+                marginBottom: 16,
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => setRole("workshop")}
+                style={{
+                  padding: "12px 10px",
+                  borderRadius: 14,
+                  cursor: "pointer",
+                  border:
+                    role === "workshop"
+                      ? "1.5px solid #3b82f6"
+                      : "1px solid rgba(255, 255, 255, 0.08)",
+                  background:
+                    role === "workshop" ? "rgba(59, 130, 246, 0.15)" : "rgba(255, 255, 255, 0.02)",
+                  color: "var(--text)",
+                  textAlign: "center",
+                  transition: "0.2s",
+                }}
+              >
+                <Wrench size={18} style={{ margin: "0 auto 4px", color: "#60a5fa" }} />
+                <div style={{ fontWeight: 700, fontSize: 13 }}>ورشة / شركة</div>
+                <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 2 }}>يتطلب موافقة الإدارة</div>
+              </button>
 
-          <button
-            type="button"
-            onClick={() => setRole("marketer")}
+              <button
+                type="button"
+                onClick={() => setRole("marketer")}
+                style={{
+                  padding: "12px 10px",
+                  borderRadius: 14,
+                  cursor: "pointer",
+                  border:
+                    role === "marketer"
+                      ? "1.5px solid #f59e0b"
+                      : "1px solid rgba(255, 255, 255, 0.08)",
+                  background:
+                    role === "marketer" ? "rgba(245, 158, 11, 0.15)" : "rgba(255, 255, 255, 0.02)",
+                  color: "var(--text)",
+                  textAlign: "center",
+                  transition: "0.2s",
+                }}
+              >
+                <Share2 size={18} style={{ margin: "0 auto 4px", color: "#fbbf24" }} />
+                <div style={{ fontWeight: 700, fontSize: 13 }}>عميل / مسوّق</div>
+                <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 2 }}>تفعيل فوري</div>
+              </button>
+            </div>
+          )}
+
+          {/* نموذج الإدخال الأساسي */}
+          <form
+            onSubmit={handleSubmit}
             style={{
-              padding: "12px 10px",
-              borderRadius: 14,
-              cursor: "pointer",
-              border:
-                role === "marketer"
-                  ? "1.5px solid #f59e0b"
-                  : "1px solid rgba(255, 255, 255, 0.08)",
-              background:
-                role === "marketer" ? "rgba(245, 158, 11, 0.15)" : "rgba(255, 255, 255, 0.02)",
-              color: "var(--text)",
-              textAlign: "center",
-              transition: "0.2s",
+              background: "rgba(255, 255, 255, 0.03)",
+              border: "1px solid rgba(255, 255, 255, 0.08)",
+              borderRadius: 16,
+              padding: 18,
+              display: "grid",
+              gap: 12,
+              backdropFilter: "blur(12px)",
             }}
           >
-            <Share2 size={18} style={{ margin: "0 auto 4px", color: "#fbbf24" }} />
-            <div style={{ fontWeight: 700, fontSize: 13 }}>عميل / مسوّق</div>
-            <div style={{ fontSize: 10.5, color: "var(--muted)", marginTop: 2 }}>تفعيل فوري</div>
-          </button>
-        </div>
-      )}
+            <div style={{ paddingBottom: 8, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <h2 style={{ fontSize: 16, fontWeight: 800 }}>
+                {authMode === "login"
+                  ? "تسجيل الدخول"
+                  : role === "workshop"
+                  ? "بيانات اعتماد الورشة الجديدة"
+                  : "بيانات حساب المسوّق الجديد"}
+              </h2>
+            </div>
 
-      {/* النموذج بستايل زجاجي ناعم */}
-      <form
-        onSubmit={handleSubmit}
-        style={{
-          background: "rgba(255, 255, 255, 0.03)",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
-          borderRadius: 16,
-          padding: 18,
-          display: "grid",
-          gap: 12,
-          backdropFilter: "blur(12px)",
-        }}
-      >
-        <div style={{ paddingBottom: 8, borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-          <h2 style={{ fontSize: 16, fontWeight: 800 }}>
-            {authMode === "login"
-              ? "تسجيل الدخول"
-              : role === "workshop"
-              ? "بيانات اعتماد الورشة الجديدة"
-              : "بيانات حساب المسوّق الجديد"}
-          </h2>
-        </div>
+            {authMode === "register" && (
+              <input
+                className="input"
+                placeholder={role === "workshop" ? "اسم الورشة أو الشركة الرسمي" : "الاسم الكامل"}
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                style={{ background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: "10px 12px", fontSize: 13 }}
+              />
+            )}
 
-        {authMode === "register" && (
-          <input
-            className="input"
-            placeholder={role === "workshop" ? "اسم الورشة أو الشركة الرسمي" : "الاسم الكامل"}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            style={{ background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: "10px 12px", fontSize: 13 }}
-          />
-        )}
-
-        <input
-          className="input"
-          type="tel"
-          placeholder="رقم الموبايل (09XXXXXXXX)"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          required
-          style={{ background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: "10px 12px", fontSize: 13 }}
-        />
-
-        <input
-          className="input"
-          type="password"
-          placeholder="كلمة المرور"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          style={{ background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: "10px 12px", fontSize: 13 }}
-        />
-
-        {authMode === "register" && role === "workshop" && (
-          <>
             <input
               className="input"
-              placeholder="رقم السجل التجاري / ترخيص الورشة"
-              value={license}
-              onChange={(e) => setLicense(e.target.value)}
+              type="tel"
+              placeholder="رقم الموبايل (09XXXXXXXX)"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
               required
               style={{ background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: "10px 12px", fontSize: 13 }}
             />
 
-            {/* اختيار المحافظة بستايل زجاجي احترافي متناسق */}
-            <div
-              style={{
-                background: "rgba(0,0,0,0.15)",
-                border: "1px solid rgba(255,255,255,0.06)",
-                borderRadius: 10,
-                padding: 10,
-              }}
-            >
-              <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, marginBottom: 8, color: "var(--muted)" }}>
-                اختر المحافظة:
-              </label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, maxHeight: 150, overflowY: "auto" }}>
-                {SYRIAN_CITIES.map((c) => {
-                  const active = city === c;
-                  return (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => setCity(c)}
-                      style={{
-                        padding: "5px 10px",
-                        borderRadius: 8,
-                        fontSize: 11.5,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        border: active ? "1px solid #3b82f6" : "1px solid rgba(255,255,255,0.08)",
-                        background: active ? "rgba(59, 130, 246, 0.25)" : "transparent",
-                        color: active ? "#93c5fd" : "var(--muted)",
-                      }}
-                    >
-                      {active ? "✓ " : ""} {c}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div
-              style={{
-                background: "rgba(0,0,0,0.15)",
-                border: "1px solid rgba(255,255,255,0.06)",
-                borderRadius: 10,
-                padding: 10,
-              }}
-            >
-              <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, marginBottom: 8, color: "var(--muted)" }}>
-                اختصاص الورشة (الماركات):
-              </label>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {AVAILABLE_BRANDS.map((brand) => {
-                  const active = selectedBrands.includes(brand);
-                  return (
-                    <button
-                      key={brand}
-                      type="button"
-                      onClick={() => toggleBrand(brand)}
-                      style={{
-                        padding: "5px 10px",
-                        borderRadius: 8,
-                        fontSize: 11.5,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        border: active ? "1px solid #3b82f6" : "1px solid rgba(255,255,255,0.08)",
-                        background: active ? "rgba(59, 130, 246, 0.2)" : "transparent",
-                        color: active ? "#93c5fd" : "var(--muted)",
-                      }}
-                    >
-                      {active ? "✓ " : "+ "} {brand}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {selectedBrands.includes("أخرى") && (
-                <input
-                  className="input"
-                  style={{ marginTop: 8, background: "rgba(0,0,0,0.2)", borderRadius: 8, padding: "8px 10px", fontSize: 12 }}
-                  placeholder="اسم الماركة الإضافية..."
-                  value={otherBrandText}
-                  onChange={(e) => setOtherBrandText(e.target.value)}
-                  required
-                />
-              )}
-            </div>
-
             <input
               className="input"
-              placeholder="كود المسوّق إن وجد (اختياري)"
-              value={refCode}
-              onChange={(e) => setRefCode(e.target.value)}
+              type="password"
+              placeholder="كلمة المرور"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
               style={{ background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: "10px 12px", fontSize: 13 }}
             />
 
-            <div
+            {authMode === "register" && role === "workshop" && (
+              <>
+                <input
+                  className="input"
+                  placeholder="رقم السجل التجاري / ترخيص الورشة"
+                  value={license}
+                  onChange={(e) => setLicense(e.target.value)}
+                  required
+                  style={{ background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: "10px 12px", fontSize: 13 }}
+                />
+
+                {/* اختيار المحافظة بستايل مستطيل منسدل احترافي تماماً مثل خيارات السيارات */}
+                <div style={{ position: "relative" }}>
+                  <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, marginBottom: 6, color: "var(--muted)" }}>
+                    المحافظة:
+                  </label>
+                  <select
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    style={{
+                      width: "100%",
+                      background: "rgba(0,0,0,0.3)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: 10,
+                      padding: "11px 14px",
+                      fontSize: 13,
+                      color: "#fff",
+                      appearance: "none",
+                      outline: "none",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {SYRIAN_CITIES.map((c) => (
+                      <option key={c} value={c} style={{ background: "#121212", color: "#fff" }}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown size={16} style={{ position: "absolute", left: 14, top: 38, color: "var(--muted)", pointerEvents: "none" }} />
+                </div>
+
+                <div
+                  style={{
+                    background: "rgba(0,0,0,0.15)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                    borderRadius: 10,
+                    padding: 10,
+                  }}
+                >
+                  <label style={{ display: "block", fontSize: 11.5, fontWeight: 700, marginBottom: 8, color: "var(--muted)" }}>
+                    اختصاص الورشة (الماركات):
+                  </label>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {AVAILABLE_BRANDS.map((brand) => {
+                      const active = selectedBrands.includes(brand);
+                      return (
+                        <button
+                          key={brand}
+                          type="button"
+                          onClick={() => toggleBrand(brand)}
+                          style={{
+                            padding: "5px 10px",
+                            borderRadius: 8,
+                            fontSize: 11.5,
+                            fontWeight: 600,
+                            cursor: "pointer",
+                            border: active ? "1px solid #3b82f6" : "1px solid rgba(255, 255, 255, 0.08)",
+                            background: active ? "rgba(59, 130, 246, 0.2)" : "transparent",
+                            color: active ? "#93c5fd" : "var(--muted)",
+                          }}
+                        >
+                          {active ? "✓ " : "+ "} {brand}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {selectedBrands.includes("أخرى") && (
+                    <input
+                      className="input"
+                      style={{ marginTop: 8, background: "rgba(0,0,0,0.2)", borderRadius: 8, padding: "8px 10px", fontSize: 12 }}
+                      placeholder="اسم الماركة الإضافية..."
+                      value={otherBrandText}
+                      onChange={(e) => setOtherBrandText(e.target.value)}
+                      required
+                    />
+                  )}
+                </div>
+
+                <input
+                  className="input"
+                  placeholder="كود المسوّق إن وجد (اختياري)"
+                  value={refCode}
+                  onChange={(e) => setRefCode(e.target.value)}
+                  style={{ background: "rgba(0,0,0,0.2)", borderRadius: 10, padding: "10px 12px", fontSize: 13 }}
+                />
+
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6,
+                    fontSize: 11.5,
+                    color: "#93c5fd",
+                    background: "rgba(37, 99, 235, 0.1)",
+                    padding: "8px 10px",
+                    borderRadius: 8,
+                  }}
+                >
+                  <ShieldCheck size={16} />
+                  <span>حسابات الورشات تتطلب مراجعة وموافقة الإدارة قبل التفعيل.</span>
+                </div>
+              </>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
               style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                fontSize: 11.5,
-                color: "#93c5fd",
-                background: "rgba(37, 99, 235, 0.1)",
-                padding: "8px 10px",
-                borderRadius: 8,
+                marginTop: 4,
+                padding: "12px",
+                borderRadius: 12,
+                fontWeight: 800,
+                fontSize: 14,
+                cursor: "pointer",
+                border: "none",
+                background: authMode === "register" && role === "marketer" ? "#f59e0b" : "#2563eb",
+                color: "#fff",
+                boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+                transition: "0.2s",
               }}
             >
-              <ShieldCheck size={16} />
-              <span>حسابات الورشات تتطلب مراجعة وموافقة الإدارة قبل التفعيل.</span>
-            </div>
-          </>
-        )}
+              {loading
+                ? "جاري المعالجة..."
+                : authMode === "login"
+                ? "تسجيل الدخول"
+                : role === "workshop"
+                ? "إرسال طلب اعتماد الورشة"
+                : "إنشاء الحساب فوراً"}
+            </button>
 
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            marginTop: 4,
-            padding: "12px",
-            borderRadius: 12,
-            fontWeight: 800,
-            fontSize: 14,
-            cursor: "pointer",
-            border: "none",
-            background: authMode === "register" && role === "marketer" ? "#f59e0b" : "#2563eb",
-            color: "#fff",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
-            transition: "0.2s",
-          }}
-        >
-          {loading
-            ? "جاري المعالجة..."
-            : authMode === "login"
-            ? "تسجيل الدخول"
-            : role === "workshop"
-            ? "إرسال طلب اعتماد الورشة"
-            : "إنشاء الحساب فوراً"}
-        </button>
-
-        {errorMsg && (
-          <div
-            style={{
-              padding: 10,
-              borderRadius: 8,
-              background: "rgba(239, 68, 68, 0.15)",
-              color: "#f87171",
-              fontSize: 12,
-              fontWeight: 700,
-              textAlign: "center",
-            }}
-          >
-            {errorMsg}
-          </div>
-        )}
-
-        {msg && (
-          <div
-            style={{
-              padding: 10,
-              borderRadius: 8,
-              background: "rgba(16, 185, 129, 0.15)",
-              color: "#34d399",
-              fontSize: 12,
-              fontWeight: 700,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 6,
-            }}
-          >
-            <CheckCircle2 size={15} /> {msg}
-          </div>
-        )}
-      </form>
+            {errorMsg && (
+              <div
+                style={{
+                  padding: 10,
+                  borderRadius: 8,
+                  background: "rgba(239, 68, 68, 0.15)",
+                  color: "#f87171",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  textAlign: "center",
+                }}
+              >
+                {errorMsg}
+              </div>
+            )}
+          </form>
+        </>
+      )}
     </div>
   );
 }
