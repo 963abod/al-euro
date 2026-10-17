@@ -4,21 +4,27 @@ import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabase";
 
 const COOKIE_NAME = "euro_session";
-const SECRET = process.env.AUTH_SECRET;
-if (!SECRET) {
-  throw new Error("AUTH_SECRET is not defined in environment variables");
+
+function getSecret(): string {
+  const secret = process.env.AUTH_SECRET;
+  if (!secret) {
+    throw new Error("AUTH_SECRET is not defined in environment variables");
+  }
+  return secret;
 }
 
 function sign(payload: object): string {
+  const secret = getSecret();
   const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
-  const sig = crypto.createHmac("sha256", SECRET).update(data).digest("base64url");
-  return data + "." + sig;
+  const sig = crypto.createHmac("sha256", secret).update(data).digest("base64url");
+  return `${data}.${sig}`;
 }
 
 function verify(token: string): any | null {
+  const secret = getSecret();
   const [data, sig] = token.split(".");
   if (!data || !sig) return null;
-  const expected = crypto.createHmac("sha256", SECRET).update(data).digest("base64url");
+  const expected = crypto.createHmac("sha256", secret).update(data).digest("base64url");
   if (sig !== expected) return null;
   try {
     return JSON.parse(Buffer.from(data, "base64url").toString("utf8"));
@@ -28,24 +34,29 @@ function verify(token: string): any | null {
 }
 
 function hashPassword(password: string): string {
-  return crypto.createHmac("sha256", SECRET).update(password).digest("hex");
+  const secret = getSecret();
+  return crypto.createHmac("sha256", secret).update(password).digest("hex");
 }
 
 // جلب بيانات المستخدم الحالي من الجلسة + قاعدة البيانات
 export async function GET() {
-  const token = cookies().get(COOKIE_NAME)?.value;
-  if (!token) return NextResponse.json({ user: null });
+  try {
+    const token = cookies().get(COOKIE_NAME)?.value;
+    if (!token) return NextResponse.json({ user: null });
 
-  const session = verify(token);
-  if (!session?.id) return NextResponse.json({ user: null });
+    const session = verify(token);
+    if (!session?.id) return NextResponse.json({ user: null });
 
-  const { data: user } = await supabaseAdmin
-    .from("users")
-    .select("id, role, name, phone, city, specs, tier, debt_limit, debt_balance, cashback_balance, my_ref_code")
-    .eq("id", session.id)
-    .single();
+    const { data: user } = await supabaseAdmin
+      .from("users")
+      .select("id, role, name, phone, city, specs, tier, debt_limit, debt_balance, cashback_balance, my_ref_code")
+      .eq("id", session.id)
+      .single();
 
-  return NextResponse.json({ user: user || session });
+    return NextResponse.json({ user: user || session });
+  } catch {
+    return NextResponse.json({ user: null });
+  }
 }
 
 // تسجيل دخول أو إنشاء حساب جديد في Supabase
@@ -61,11 +72,15 @@ export async function POST(req: Request) {
     const passHash = hashPassword(password);
 
     // 1. فحص إذا كان الحساب موجود مسبقاً برقم الموبايل
-    const { data: existingUser } = await supabaseAdmin
+    const { data: existingUser, error: findError } = await supabaseAdmin
       .from("users")
       .select("*")
       .eq("phone", phone)
       .maybeSingle();
+
+    if (findError) {
+      return NextResponse.json({ error: "خطأ في الاتصال بقاعدة البيانات" }, { status: 500 });
+    }
 
     let userRecord = existingUser;
 
@@ -76,7 +91,7 @@ export async function POST(req: Request) {
       }
       if (existingUser.role !== role) {
         return NextResponse.json(
-          { error: "هذا الرقم مسجل مسبقاً كحساب " + (existingUser.role === "workshop" ? "ورشة" : "مسوّق") },
+          { error: `هذا الرقم مسجل مسبقاً كحساب ${existingUser.role === "workshop" ? "ورشة" : "مسوّق"}` },
           { status: 400 }
         );
       }
@@ -124,7 +139,6 @@ export async function POST(req: Request) {
 
         insertError = res.error;
 
-        // إذا كان الخطأ بسبب تكرار my_ref_code نعيد المحاولة بكود جديد، وإلا نتوقف
         const isRefCollision =
           res.error.code === "23505" &&
           res.error.message?.includes("my_ref_code");
@@ -163,7 +177,10 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ ok: true, user: sessionPayload });
   } catch (err: any) {
-    return NextResponse.json({ error: "حدث خطأ غير متوقع في الخادم" }, { status: 500 });
+    return NextResponse.json(
+      { error: err?.message || "حدث خطأ غير متوقع في الخادم" },
+      { status: 500 }
+    );
   }
 }
 
