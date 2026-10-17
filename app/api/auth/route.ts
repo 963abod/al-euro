@@ -38,7 +38,6 @@ function hashPassword(password: string): string {
   return crypto.createHmac("sha256", secret).update(password).digest("hex");
 }
 
-// جلب بيانات المستخدم الحالي من الجلسة + قاعدة البيانات
 export async function GET() {
   try {
     const token = cookies().get(COOKIE_NAME)?.value;
@@ -64,24 +63,24 @@ export async function GET() {
   }
 }
 
-// معالجة تسجيل الدخول (login) أو إنشاء حساب جديد (register)
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { mode = "login", role, name, phone, password, license, city, spec, refCode } = body;
 
-    if (!phone || !password) {
-      return NextResponse.json({ error: "يرجى إدخال رقم الموبايل وكلمة المرور" }, { status: 400 });
+    if (!phone || !password || !role) {
+      return NextResponse.json({ error: "يرجى إدخال رقم الموبايل وكلمة المرور ونوع الحساب" }, { status: 400 });
     }
 
     const cleanPhone = String(phone).trim();
     const passHash = hashPassword(password);
 
-    // البحث عن الحساب برقم الموبايل
+    // البحث عن الحساب برقم الموبايل ونوع الحساب معاً
     const { data: existingUser, error: findError } = await supabaseAdmin
       .from("users")
       .select("*")
       .eq("phone", cleanPhone)
+      .eq("role", role)
       .maybeSingle();
 
     if (findError) {
@@ -94,7 +93,7 @@ export async function POST(req: Request) {
     if (mode === "login") {
       if (!existingUser) {
         return NextResponse.json(
-          { error: "هذا الرقم غير مسجل، يرجى الانتقال لتبويب (إنشاء حساب جديد)" },
+          { error: `لا يوجد حساب ${role === "workshop" ? "ورشة/شركة" : "مسوّق"} مسجل بهذا الرقم. يرجى التحقق أو إنشاء حساب جديد.` },
           { status: 404 }
         );
       }
@@ -103,8 +102,8 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: "كلمة المرور غير صحيحة" }, { status: 401 });
       }
 
-      // منع دخول الورشة إذا لم يوافق عليها الأدمن بعد
-      if (!existingUser.is_active) {
+      // حساب الورشة يتطلب موافقة الإدارة
+      if (role === "workshop" && !existingUser.is_active) {
         return NextResponse.json(
           {
             pendingApproval: true,
@@ -138,13 +137,13 @@ export async function POST(req: Request) {
     // ==========================
     if (existingUser) {
       return NextResponse.json(
-        { error: "رقم الموبايل هذا مسجل مسبقاً! انتقل لتبويب (تسجيل الدخول)" },
+        { error: `هذا الرقم مسجل مسبقاً بنفس نوع الحساب (${role === "workshop" ? "ورشة" : "مسوّق"})! انتقل لتبويب (تسجيل الدخول)` },
         { status: 400 }
       );
     }
 
-    if (!name || !role) {
-      return NextResponse.json({ error: "يرجى إكمال جميع الحقول المطلوبة" }, { status: 400 });
+    if (!name) {
+      return NextResponse.json({ error: "الاسم مطلوب لإنشاء الحساب" }, { status: 400 });
     }
 
     if (role === "workshop" && (!license || !city || !spec)) {
@@ -158,7 +157,6 @@ export async function POST(req: Request) {
       ? spec.split(",").map((s: string) => s.trim()).filter(Boolean)
       : [];
 
-    // الورشة تكون غير مفعلة (false) بانتظار موافقة الأدمن، بينما المسوق/العميل يتفعل فوراً (true)
     const isActiveInitial = role === "workshop" ? false : true;
 
     let newUser = null;
@@ -207,7 +205,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // إذا كان حساب ورشة، لا نقوم بتسجيل دخوله فوراً بل نرسل إشعار بانتظار موافقة الإدارة
     if (role === "workshop") {
       return NextResponse.json({
         ok: true,
@@ -216,7 +213,6 @@ export async function POST(req: Request) {
       });
     }
 
-    // أما المسوق/العميل يتم تسجيل دخوله مباشرة
     const sessionPayload = {
       id: newUser.id,
       role: newUser.role,
@@ -242,7 +238,6 @@ export async function POST(req: Request) {
   }
 }
 
-// تسجيل الخروج
 export async function DELETE() {
   cookies().delete(COOKIE_NAME);
   return NextResponse.json({ ok: true });
