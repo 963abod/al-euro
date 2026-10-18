@@ -110,17 +110,8 @@ export default function LoginPage() {
 
       setMsg("تم بنجاح! جاري تحويلك...");
 
-      // التوجيه الفوري حسب نوع الحساب
-      const targetRole = data.user?.role || role;
-      setTimeout(() => {
-        if (targetRole === "workshop") {
-          window.location.href = "/workshop";
-        } else if (targetRole === "marketer") {
-          window.location.href = "/marketer";
-        } else {
-          window.location.href = "/";
-        }
-      }, 500);
+      // بعد نجاح الدخول أو إنشاء الحساب، افتح الكتالوج.
+      window.location.href = "/";
     } catch {
       setErrorMsg("خطأ في الاتصال بالخادم");
     } finally {
