@@ -125,7 +125,8 @@ export default function AccountPage() {
     const rect = frame.getBoundingClientRect();
     setCropOffsetX(Math.max(-1, Math.min(1, start.offsetX + ((e.clientX - start.x) / Math.max(rect.width, 1)) * 2)));
     setCropOffsetY(Math.max(-1, Math.min(1, start.offsetY + ((e.clientY - start.y) / Math.max(rect.height, 1)) * 2)));
-    // Keep the image position within the normalized crop range.  }
+    // Keep the image position within the normalized crop range.
+  }
 
   function endCropDrag() {
     dragState.current = null;
