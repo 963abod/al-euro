@@ -31,6 +31,7 @@ export default function AccountPage() {
   const [newPassword, setNewPassword] = useState("");
   const [avatar, setAvatar] = useState("");
   const [pendingAvatar, setPendingAvatar] = useState("");
+  const [cropImageReady, setCropImageReady] = useState(false);
   const [cropZoom, setCropZoom] = useState(1);
   const [cropOffsetX, setCropOffsetX] = useState(0);
   const [cropOffsetY, setCropOffsetY] = useState(0);
@@ -70,6 +71,7 @@ export default function AccountPage() {
     const reader = new FileReader();
     reader.onload = () => {
       setPendingAvatar(String(reader.result || ""));
+      setCropImageReady(false);
       setCropZoom(1);
       setCropOffsetX(0);
       setCropOffsetY(0);
@@ -83,6 +85,10 @@ export default function AccountPage() {
   function saveCroppedAvatar() {
     if (!pendingAvatar || !user || !cropImageRef.current) return;
     const image = cropImageRef.current;
+    if (!cropImageReady || !image.complete || image.naturalWidth < 1 || image.naturalHeight < 1) {
+      setError("انتظر حتى تكتمل معاينة الصورة ثم اضغط اعتماد الصورة.");
+      return;
+    }
     const canvas = document.createElement("canvas");
     canvas.width = 400;
     canvas.height = 400;
@@ -105,6 +111,7 @@ export default function AccountPage() {
       localStorage.setItem("euro_avatar_" + user.id, cropped);
       setAvatar(cropped);
       setPendingAvatar("");
+      setCropImageReady(false);
       setNotice("تم حفظ الصورة على هذا الجهاز.");
       setError("");
     } catch {
@@ -236,7 +243,7 @@ export default function AccountPage() {
         </label>
         {notice && <p role="status" className="rounded-xl bg-[#30D158]/10 p-3 text-sm text-[#30D158]">{notice}</p>}
         {error && <p role="alert" className="rounded-xl bg-[#FF453A]/10 p-3 text-sm text-[#FF8A80]">{error}</p>}
-        <button disabled={saving} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#1688ff] to-[#0066e8] px-4 py-3 font-bold disabled:opacity-60"><Save size={17}/>{saving ? "جارٍ الحفظ..." : "حفظ التعديلات"}</button>
+        <button disabled={saving} type="submit" className="account-save-button inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 font-bold disabled:cursor-wait disabled:opacity-70"><Save size={17}/>{saving ? "جارٍ الحفظ..." : "حفظ التعديلات"}</button>
       </form>
 
       <section className="grid gap-3 sm:grid-cols-2">
@@ -256,7 +263,7 @@ export default function AccountPage() {
           <div className="account-modal w-full max-w-sm rounded-3xl border p-5 shadow-2xl">
             <div className="mb-4 flex items-center justify-between gap-3">
               <h3 id="avatar-crop-title" className="text-lg font-bold">معاينة صورة البروفايل</h3>
-              <button type="button" onClick={() => setPendingAvatar("")} className="rounded-full px-3 py-1 text-sm">إلغاء</button>
+              <button type="button" onClick={() => { setPendingAvatar(""); setCropImageReady(false); }} className="rounded-full px-3 py-1 text-sm">إلغاء</button>
             </div>
             <div
               ref={cropFrameRef}
@@ -271,6 +278,8 @@ export default function AccountPage() {
               <img
                 ref={cropImageRef}
                 src={pendingAvatar}
+                onLoad={() => setCropImageReady(true)}
+                onError={() => { setCropImageReady(false); setError("تعذر عرض الصورة المختارة."); }}
                 alt="معاينة الصورة قبل الحفظ"
                 draggable={false}
                 className="pointer-events-none h-full w-full select-none object-contain"
@@ -292,7 +301,7 @@ export default function AccountPage() {
             </label>
             <div className="grid grid-cols-2 gap-2">
               <button type="button" onClick={() => setPendingAvatar("")} className="rounded-xl border border-white/15 px-4 py-3 text-sm font-semibold">إلغاء</button>
-              <button type="button" onClick={saveCroppedAvatar} className="rounded-xl bg-[#0A84FF] px-4 py-3 text-sm font-bold text-white">اعتماد الصورة</button>
+              <button type="button" disabled={!cropImageReady} onClick={saveCroppedAvatar} className="rounded-xl bg-[#0A84FF] px-4 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50">اعتماد الصورة</button>
             </div>
           </div>
         </div>
