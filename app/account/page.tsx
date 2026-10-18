@@ -123,14 +123,9 @@ export default function AccountPage() {
     const frame = cropFrameRef.current;
     if (!start || !frame) return;
     const rect = frame.getBoundingClientRect();
-    const maxX = Math.max(0, (cropImageRef.current?.naturalWidth || 1) - Math.min(cropImageRef.current?.naturalWidth || 1, cropImageRef.current?.naturalHeight || 1) / cropZoom);
-    const maxY = Math.max(0, (cropImageRef.current?.naturalHeight || 1) - Math.min(cropImageRef.current?.naturalWidth || 1, cropImageRef.current?.naturalHeight || 1) / cropZoom);
     setCropOffsetX(Math.max(-1, Math.min(1, start.offsetX + ((e.clientX - start.x) / Math.max(rect.width, 1)) * 2)));
     setCropOffsetY(Math.max(-1, Math.min(1, start.offsetY + ((e.clientY - start.y) / Math.max(rect.height, 1)) * 2)));
-    // The normalized offsets are clamped; source dimensions are used again when saving.
-    void maxX;
-    void maxY;
-  }
+    // Keep the image position within the normalized crop range.  }
 
   function endCropDrag() {
     dragState.current = null;
