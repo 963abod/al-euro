@@ -22,8 +22,9 @@ function getSecret(): string {
 }
 
 function sign(payload: Session): string {
-  const data = Buffer.from(JSON.stringify(payload)).toString("base64url");
-  const signature = crypto.createHmac("sha256", getSecret()).update(data).digest("base64url");
+  const json = JSON.stringify(payload);
+  const data = Buffer.from(json).toString("base64url");
+  const signature = crypto.createHmac("sha256", getSecret()).update(json).digest("base64url");
   return `${data}.${signature}`;
 }
 
@@ -31,11 +32,12 @@ function verify(token: string): Session | null {
   try {
     const [data, signature, extra] = token.split(".");
     if (!data || !signature || extra) return null;
-    const expected = crypto.createHmac("sha256", getSecret()).update(data).digest();
+    const json = Buffer.from(data, "base64url").toString("utf8");
+    const expected = crypto.createHmac("sha256", getSecret()).update(json).digest();
     const received = Buffer.from(signature, "base64url");
     if (received.length !== expected.length || !crypto.timingSafeEqual(received, expected)) return null;
 
-    const session = JSON.parse(Buffer.from(data, "base64url").toString("utf8")) as Partial<Session>;
+    const session = JSON.parse(json) as Partial<Session>;
     const now = Date.now();
     if (
       typeof session.id !== "string" ||
