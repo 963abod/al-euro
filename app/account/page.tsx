@@ -95,8 +95,8 @@ export default function AccountPage() {
     const scaledHeight = drawHeight * cropZoom;
     const maxX = Math.max(0, (scaledWidth - 400) / 2);
     const maxY = Math.max(0, (scaledHeight - 400) / 2);
-    const dx = (400 - scaledWidth) / 2 - cropOffsetX * maxX;
-    const dy = (400 - scaledHeight) / 2 - cropOffsetY * maxY;
+    const dx = (400 - scaledWidth) / 2 + cropOffsetX * maxX;
+    const dy = (400 - scaledHeight) / 2 + cropOffsetY * maxY;
     context.fillStyle = "#171a22";
     context.fillRect(0, 0, 400, 400);
     context.drawImage(image, dx, dy, scaledWidth, scaledHeight);
