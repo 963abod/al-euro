@@ -80,9 +80,6 @@ export default function Home() {
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push("/product/" + p.id); } }}
             className="flex cursor-pointer flex-col gap-1 rounded-[24px] border border-white/[0.14] bg-gradient-to-b from-white/[0.09] to-white/[0.03] p-4 backdrop-blur-2xl transition-colors duration-200 hover:border-[#0A84FF]/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0A84FF]"
           >
-            <span className="text-xs font-medium text-[#0A84FF]">
-              {p.brand}
-            </span>
 
             <code className="text-xs text-white/45" dir="ltr">
               {p.pn}
