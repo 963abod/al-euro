@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BadgeCheck, Building2, MapPin, Phone, ShieldCheck, LogOut, Save, UserRound, Wallet, Headset, ExternalLink, PackageCheck, Clock3 } from "lucide-react";
 import { H } from "@/components/ui";
@@ -30,6 +30,9 @@ export default function AccountPage() {
   const [city, setCity] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [avatar, setAvatar] = useState("");
+  const [pendingAvatar, setPendingAvatar] = useState("");
+  const [cropZoom, setCropZoom] = useState(1);
+  const cropImageRef = useRef<HTMLImageElement>(null);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -56,21 +59,44 @@ export default function AccountPage() {
 
   function uploadAvatar(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file || !user) return;
     if (!file.type.startsWith("image/")) { setError("اختر ملف صورة صالحاً."); return; }
-    if (file.size > 2 * 1024 * 1024) { setError("حجم الصورة يجب ألا يتجاوز 2 ميغابايت."); return; }
+    if (file.size > 5 * 1024 * 1024) { setError("حجم الصورة يجب ألا يتجاوز 5 ميغابايت."); return; }
     const reader = new FileReader();
     reader.onload = () => {
-      const result = String(reader.result || "");
-      try {
-        localStorage.setItem(`euro_avatar_${user.id}`, result);
-        setAvatar(result);
-        setNotice("تم حفظ الصورة على هذا الجهاز.");
-      } catch {
-        setError("تعذر حفظ الصورة محلياً؛ جرّب صورة أصغر.");
-      }
+      setPendingAvatar(String(reader.result || ""));
+      setCropZoom(1);
+      setError("");
+      setNotice("");
     };
+    reader.onerror = () => setError("تعذرت قراءة الصورة. جرّب ملفاً آخر.");
     reader.readAsDataURL(file);
+  }
+
+  function saveCroppedAvatar() {
+    if (!pendingAvatar || !user || !cropImageRef.current) return;
+    const image = cropImageRef.current;
+    const size = Math.min(image.naturalWidth, image.naturalHeight);
+    const cropSize = size / cropZoom;
+    const sx = (image.naturalWidth - cropSize) / 2;
+    const sy = (image.naturalHeight - cropSize) / 2;
+    const canvas = document.createElement("canvas");
+    canvas.width = 400;
+    canvas.height = 400;
+    const context = canvas.getContext("2d");
+    if (!context) { setError("تعذر تجهيز الصورة."); return; }
+    context.drawImage(image, sx, sy, cropSize, cropSize, 0, 0, 400, 400);
+    const cropped = canvas.toDataURL("image/jpeg", 0.88);
+    try {
+      localStorage.setItem(`euro_avatar_${user.id}`, cropped);
+      setAvatar(cropped);
+      setPendingAvatar("");
+      setNotice("تم حفظ الصورة على هذا الجهاز.");
+      setError("");
+    } catch {
+      setError("تعذر حفظ الصورة محلياً؛ اختر صورة أصغر.");
+    }
   }
 
   async function saveProfile(e: React.FormEvent<HTMLFormElement>) {
@@ -113,7 +139,7 @@ export default function AccountPage() {
     <div className="mx-auto max-w-3xl space-y-4 pb-4">
       <H t="ملفي الشخصي" s="إدارة بيانات حسابك وإعدادات الأمان" />
 
-      <section className="overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-br from-[#0A84FF]/20 via-white/[0.06] to-white/[0.02] p-5 shadow-[0_18px_55px_rgba(0,0,0,.25)]">
+      <section className="account-card overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-br from-[#0A84FF]/20 via-white/[0.06] to-white/[0.02] p-5 shadow-[0_18px_55px_rgba(0,0,0,.25)]">
         <div className="flex items-center gap-4">
           <div className="relative h-20 w-20 shrink-0">
             <div className="grid h-20 w-20 place-items-center overflow-hidden rounded-[26px] border border-white/20 bg-white/10 text-2xl font-black text-white shadow-inner">
@@ -136,7 +162,7 @@ export default function AccountPage() {
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2">
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+        <div className="account-card rounded-2xl border border-white/10 bg-white/[0.04] p-4">
           <div className="mb-2 flex items-center gap-2 text-sm text-white/55"><PackageCheck size={17}/>إحصائيات الطلبات</div>
           <strong className="text-2xl">—</strong>
           <p className="mt-1 text-xs leading-5 text-white/45">سجل الطلبات غير متاح بعد؛ الحفظ الدائم للطلبات غير مفعّل في النظام الحالي.</p>
@@ -149,15 +175,15 @@ export default function AccountPage() {
         </div>
       </section>
 
-      <form onSubmit={saveProfile} className="space-y-4 rounded-[24px] border border-white/10 bg-white/[0.04] p-4 sm:p-5">
+      <form onSubmit={saveProfile} className="account-card space-y-4 rounded-[24px] border border-white/10 bg-white/[0.04] p-4 sm:p-5">
         <h3 className="flex items-center gap-2 font-bold"><UserRound size={18} className="text-[#0A84FF]"/>تعديل البيانات</h3>
         <label className="block space-y-2 text-sm text-white/65">
           الاسم
-          <input value={name} onChange={(e) => setName(e.target.value)} required minLength={2} maxLength={100} className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-white outline-none focus:border-[#0A84FF]" />
+          <input value={name} onChange={(e) => setName(e.target.value)} required minLength={2} maxLength={100} className="account-field w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-white outline-none focus:border-[#0A84FF]" />
         </label>
         <label className="block space-y-2 text-sm text-white/65">
           المحافظة
-          <select value={city} onChange={(e) => setCity(e.target.value)} className="w-full rounded-xl border border-white/10 bg-[#10131c] px-3 py-3 text-white outline-none focus:border-[#0A84FF]">
+          <select value={city} onChange={(e) => setCity(e.target.value)} className="account-field w-full rounded-xl border border-white/10 bg-[#10131c] px-3 py-3 text-white outline-none focus:border-[#0A84FF]">
             <option value="">اختر المحافظة</option>
             {CITIES.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
@@ -177,10 +203,38 @@ export default function AccountPage() {
 
       <section className="grid gap-3 sm:grid-cols-2">
         <a href="https://wa.me/?text=%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D8%AA%D9%88%D8%A7%D8%B5%D9%84%20%D9%85%D8%B9%20%D8%AF%D8%B9%D9%85%20%D8%A7%D9%84%D9%8A%D9%88%D8%B1%D9%88" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.05] p-4 font-semibold hover:bg-white/10"><Headset size={18} className="text-[#30D158]"/>التواصل مع الدعم</a>
-        <a href="https://aboudweb.onrender.com" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.05] p-4 font-semibold hover:bg-white/10"><ExternalLink size={18} className="text-[#0A84FF]"/>المطوّر — Aboud Web</a>
       </section>
 
       <button onClick={logout} className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[#FF453A]/25 bg-[#FF453A]/10 p-4 font-bold text-[#FF8A80] hover:bg-[#FF453A]/15"><LogOut size={18}/>تسجيل الخروج</button>
+
+      <div className="flex justify-center pb-2 pt-1">
+        <a href="https://aboudweb.onrender.com" target="_blank" rel="noreferrer" className="developer-credit inline-flex items-center gap-1.5 text-xs transition-colors">
+          <ExternalLink size={12}/> تطوير Aboud Web
+        </a>
+      </div>
+
+      {pendingAvatar && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-labelledby="avatar-crop-title">
+          <div className="account-modal w-full max-w-sm rounded-3xl border p-5 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <h3 id="avatar-crop-title" className="text-lg font-bold">معاينة صورة البروفايل</h3>
+              <button type="button" onClick={() => setPendingAvatar("")} className="rounded-full px-3 py-1 text-sm">إلغاء</button>
+            </div>
+            <div className="mx-auto mb-5 h-56 w-56 overflow-hidden rounded-full border-2 border-[#0A84FF]/60 bg-black/10">
+              <img ref={cropImageRef} src={pendingAvatar} alt="معاينة الصورة قبل الحفظ" className="h-full w-full object-contain" style={{ transform: `scale(${cropZoom})` }} />
+            </div>
+            <label className="mb-5 block space-y-2 text-sm">
+              <span className="flex justify-between"><span>تكبير الصورة</span><span>{cropZoom.toFixed(1)}×</span></span>
+              <input type="range" min="1" max="3" step="0.1" value={cropZoom} onChange={(e) => setCropZoom(Number(e.target.value))} className="w-full accent-[#0A84FF]" />
+            </label>
+            <p className="mb-4 text-xs leading-5 text-white/60">عدّل التكبير لتحديد الجزء الظاهر داخل الإطار الدائري، ثم احفظ الصورة.</p>
+            <div className="grid grid-cols-2 gap-2">
+              <button type="button" onClick={() => setPendingAvatar("")} className="rounded-xl border border-white/15 px-4 py-3 text-sm font-semibold">إلغاء</button>
+              <button type="button" onClick={saveCroppedAvatar} className="rounded-xl bg-[#0A84FF] px-4 py-3 text-sm font-bold text-white">اعتماد الصورة</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
