@@ -146,20 +146,36 @@ export default function AccountPage() {
 
   async function saveProfile(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setSaving(true); setNotice(""); setError("");
+    if (saving) return;
+    setSaving(true);
+    setNotice("");
+    setError("");
     try {
-      if (user) localStorage.setItem(`euro_email_${user.id}`, email.trim());
+      // Email is device-local and must never block saving server-side profile data.
+      if (user) {
+        try {
+          localStorage.setItem(`euro_email_${user.id}`, email.trim());
+        } catch {
+          // Continue saving the profile even if browser storage is unavailable.
+        }
+      }
       const response = await fetch("/api/auth", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, city, ...(newPassword ? { newPassword } : {}) }),
       });
       const data = await response.json();
-      if (!response.ok || !data.ok) { setError(data.error || "تعذر حفظ التعديلات"); return; }
-      setUser(data.user); setName(data.user.name || ""); setCity(data.user.city || "");
-      setNewPassword(""); setNotice("تم حفظ بيانات حسابك بنجاح.");
+      if (!response.ok || !data.ok) {
+        setError(data.error || "تعذر حفظ التعديلات");
+        return;
+      }
+      setUser(data.user);
+      setName(data.user.name || "");
+      setCity(data.user.city || "");
+      setNewPassword("");
+      setNotice("تم حفظ بيانات حسابك بنجاح.");
     } catch {
-      setError("تعذر الاتصال بالخادم.");
+      setError("تعذر الاتصال بالخادم. تحقق من الإنترنت وحاول مجدداً.");
     } finally {
       setSaving(false);
     }
