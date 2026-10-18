@@ -32,7 +32,11 @@ export default function AccountPage() {
   const [avatar, setAvatar] = useState("");
   const [pendingAvatar, setPendingAvatar] = useState("");
   const [cropZoom, setCropZoom] = useState(1);
+  const [cropOffsetX, setCropOffsetX] = useState(0);
+  const [cropOffsetY, setCropOffsetY] = useState(0);
   const cropImageRef = useRef<HTMLImageElement>(null);
+  const cropFrameRef = useRef<HTMLDivElement>(null);
+  const dragState = useRef<{ x: number; y: number; offsetX: number; offsetY: number } | null>(null);
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -67,6 +71,8 @@ export default function AccountPage() {
     reader.onload = () => {
       setPendingAvatar(String(reader.result || ""));
       setCropZoom(1);
+      setCropOffsetX(0);
+      setCropOffsetY(0);
       setError("");
       setNotice("");
     };
@@ -79,8 +85,10 @@ export default function AccountPage() {
     const image = cropImageRef.current;
     const size = Math.min(image.naturalWidth, image.naturalHeight);
     const cropSize = size / cropZoom;
-    const sx = (image.naturalWidth - cropSize) / 2;
-    const sy = (image.naturalHeight - cropSize) / 2;
+    const maxX = (image.naturalWidth - cropSize) / 2;
+    const maxY = (image.naturalHeight - cropSize) / 2;
+    const sx = Math.max(0, Math.min(image.naturalWidth - cropSize, maxX + cropOffsetX * maxX));
+    const sy = Math.max(0, Math.min(image.naturalHeight - cropSize, maxY + cropOffsetY * maxY));
     const canvas = document.createElement("canvas");
     canvas.width = 400;
     canvas.height = 400;
@@ -97,6 +105,35 @@ export default function AccountPage() {
     } catch {
       setError("تعذر حفظ الصورة محلياً؛ اختر صورة أصغر.");
     }
+  }
+
+  function startCropDrag(e: React.PointerEvent<HTMLDivElement>) {
+    if (!cropFrameRef.current) return;
+    e.currentTarget.setPointerCapture(e.pointerId);
+    dragState.current = {
+      x: e.clientX,
+      y: e.clientY,
+      offsetX: cropOffsetX,
+      offsetY: cropOffsetY,
+    };
+  }
+
+  function moveCropDrag(e: React.PointerEvent<HTMLDivElement>) {
+    const start = dragState.current;
+    const frame = cropFrameRef.current;
+    if (!start || !frame) return;
+    const rect = frame.getBoundingClientRect();
+    const maxX = Math.max(0, (cropImageRef.current?.naturalWidth || 1) - Math.min(cropImageRef.current?.naturalWidth || 1, cropImageRef.current?.naturalHeight || 1) / cropZoom);
+    const maxY = Math.max(0, (cropImageRef.current?.naturalHeight || 1) - Math.min(cropImageRef.current?.naturalWidth || 1, cropImageRef.current?.naturalHeight || 1) / cropZoom);
+    setCropOffsetX(Math.max(-1, Math.min(1, start.offsetX + ((e.clientX - start.x) / Math.max(rect.width, 1)) * 2)));
+    setCropOffsetY(Math.max(-1, Math.min(1, start.offsetY + ((e.clientY - start.y) / Math.max(rect.height, 1)) * 2)));
+    // The normalized offsets are clamped; source dimensions are used again when saving.
+    void maxX;
+    void maxY;
+  }
+
+  function endCropDrag() {
+    dragState.current = null;
   }
 
   async function saveProfile(e: React.FormEvent<HTMLFormElement>) {
@@ -202,7 +239,7 @@ export default function AccountPage() {
       </form>
 
       <section className="grid gap-3 sm:grid-cols-2">
-        <a href="https://wa.me/?text=%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D8%AA%D9%88%D8%A7%D8%B5%D9%84%20%D9%85%D8%B9%20%D8%AF%D8%B9%D9%85%20%D8%A7%D9%84%D9%8A%D9%88%D8%B1%D9%88" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.05] p-4 font-semibold hover:bg-white/10"><Headset size={18} className="text-[#30D158]"/>التواصل مع الدعم</a>
+        <a href="https://wa.me/963982026134?text=%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D8%AA%D9%88%D8%A7%D8%B5%D9%84%20%D9%85%D8%B9%20%D8%AF%D8%B9%D9%85%20%D8%A7%D9%84%D9%8A%D9%88%D8%B1%D9%88" target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/[0.05] p-4 font-semibold hover:bg-white/10"><Headset size={18} className="text-[#30D158]"/>التواصل مع الدعم</a>
       </section>
 
       <button onClick={logout} className="flex w-full items-center justify-center gap-2 rounded-2xl border border-[#FF453A]/25 bg-[#FF453A]/10 p-4 font-bold text-[#FF8A80] hover:bg-[#FF453A]/15"><LogOut size={18}/>تسجيل الخروج</button>
@@ -220,14 +257,38 @@ export default function AccountPage() {
               <h3 id="avatar-crop-title" className="text-lg font-bold">معاينة صورة البروفايل</h3>
               <button type="button" onClick={() => setPendingAvatar("")} className="rounded-full px-3 py-1 text-sm">إلغاء</button>
             </div>
-            <div className="mx-auto mb-5 h-56 w-56 overflow-hidden rounded-full border-2 border-[#0A84FF]/60 bg-black/10">
-              <img ref={cropImageRef} src={pendingAvatar} alt="معاينة الصورة قبل الحفظ" className="h-full w-full object-contain" style={{ transform: `scale(${cropZoom})` }} />
+            <div
+              ref={cropFrameRef}
+              className="mx-auto mb-4 h-56 w-56 touch-none cursor-grab overflow-hidden rounded-full border-2 border-[#0A84FF]/60 bg-black/10 active:cursor-grabbing"
+              onPointerDown={startCropDrag}
+              onPointerMove={moveCropDrag}
+              onPointerUp={endCropDrag}
+              onPointerCancel={endCropDrag}
+              onLostPointerCapture={endCropDrag}
+              aria-label="اسحب الصورة لتعديل موضعها"
+            >
+              <img
+                ref={cropImageRef}
+                src={pendingAvatar}
+                alt="معاينة الصورة قبل الحفظ"
+                draggable={false}
+                className="pointer-events-none h-full w-full select-none object-cover"
+                style={{ transform: `translate(${cropOffsetX * 25}%, ${cropOffsetY * 25}%) scale(${cropZoom})` }}
+              />
             </div>
-            <label className="mb-5 block space-y-2 text-sm">
+            <p className="mb-4 text-center text-xs text-white/60">اسحب الصورة بإصبعك داخل الدائرة لضبط موضع الوجه.</p>
+            <label className="mb-3 block space-y-2 text-sm">
               <span className="flex justify-between"><span>تكبير الصورة</span><span>{cropZoom.toFixed(1)}×</span></span>
               <input type="range" min="1" max="3" step="0.1" value={cropZoom} onChange={(e) => setCropZoom(Number(e.target.value))} className="w-full accent-[#0A84FF]" />
             </label>
-            <p className="mb-4 text-xs leading-5 text-white/60">عدّل التكبير لتحديد الجزء الظاهر داخل الإطار الدائري، ثم احفظ الصورة.</p>
+            <label className="mb-4 block space-y-2 text-sm">
+              <span>تحريك أفقي</span>
+              <input type="range" min="-1" max="1" step="0.05" value={cropOffsetX} onChange={(e) => setCropOffsetX(Number(e.target.value))} className="w-full accent-[#0A84FF]" />
+            </label>
+            <label className="mb-4 block space-y-2 text-sm">
+              <span>تحريك عمودي</span>
+              <input type="range" min="-1" max="1" step="0.05" value={cropOffsetY} onChange={(e) => setCropOffsetY(Number(e.target.value))} className="w-full accent-[#0A84FF]" />
+            </label>
             <div className="grid grid-cols-2 gap-2">
               <button type="button" onClick={() => setPendingAvatar("")} className="rounded-xl border border-white/15 px-4 py-3 text-sm font-semibold">إلغاء</button>
               <button type="button" onClick={saveCroppedAvatar} className="rounded-xl bg-[#0A84FF] px-4 py-3 text-sm font-bold text-white">اعتماد الصورة</button>
