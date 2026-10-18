@@ -29,6 +29,8 @@ export default function AccountPage() {
   const [name, setName] = useState("");
   const [city, setCity] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [avatar, setAvatar] = useState("");
+  const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
@@ -44,16 +46,38 @@ export default function AccountPage() {
         setUser(d.user);
         setName(d.user.name || "");
         setCity(d.user.city || "");
+        setAvatar(localStorage.getItem(`euro_avatar_${d.user.id}`) || "");
+        setEmail(localStorage.getItem(`euro_email_${d.user.id}`) || "");
       })
       .catch(() => router.replace("/login"))
       .finally(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
   }, [router]);
 
+  function uploadAvatar(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    if (!file.type.startsWith("image/")) { setError("اختر ملف صورة صالحاً."); return; }
+    if (file.size > 2 * 1024 * 1024) { setError("حجم الصورة يجب ألا يتجاوز 2 ميغابايت."); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = String(reader.result || "");
+      try {
+        localStorage.setItem(`euro_avatar_${user.id}`, result);
+        setAvatar(result);
+        setNotice("تم حفظ الصورة على هذا الجهاز.");
+      } catch {
+        setError("تعذر حفظ الصورة محلياً؛ جرّب صورة أصغر.");
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
   async function saveProfile(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSaving(true); setNotice(""); setError("");
     try {
+      if (user) localStorage.setItem(`euro_email_${user.id}`, email.trim());
       const response = await fetch("/api/auth", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -91,8 +115,14 @@ export default function AccountPage() {
 
       <section className="overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-br from-[#0A84FF]/20 via-white/[0.06] to-white/[0.02] p-5 shadow-[0_18px_55px_rgba(0,0,0,.25)]">
         <div className="flex items-center gap-4">
-          <div className="grid h-20 w-20 shrink-0 place-items-center rounded-[26px] border border-white/20 bg-white/10 text-2xl font-black text-white shadow-inner">
-            {initials || <UserRound size={30} />}
+          <div className="relative h-20 w-20 shrink-0">
+            <div className="grid h-20 w-20 place-items-center overflow-hidden rounded-[26px] border border-white/20 bg-white/10 text-2xl font-black text-white shadow-inner">
+              {avatar ? <img src={avatar} alt="صورة الحساب" className="h-full w-full object-cover" /> : (initials || <UserRound size={30} />)}
+            </div>
+            <label className="absolute -bottom-2 -end-2 grid h-8 w-8 cursor-pointer place-items-center rounded-full border-2 border-[#06080E] bg-[#0A84FF] text-white" title="تغيير صورة الحساب">
+              <UserRound size={15} />
+              <input type="file" accept="image/*" onChange={uploadAvatar} className="hidden" />
+            </label>
           </div>
           <div className="min-w-0 flex-1">
             <div className="mb-1 flex flex-wrap items-center gap-2">
@@ -131,6 +161,10 @@ export default function AccountPage() {
             <option value="">اختر المحافظة</option>
             {CITIES.map((item) => <option key={item} value={item}>{item}</option>)}
           </select>
+        </label>
+        <label className="block space-y-2 text-sm text-white/65">
+          البريد الإلكتروني <span className="text-white/35">(محفوظ على هذا الجهاز فقط)</span>
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="example@gmail.com" className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-3 text-white outline-none focus:border-[#0A84FF]" />
         </label>
         <label className="block space-y-2 text-sm text-white/65">
           كلمة مرور جديدة <span className="text-white/35">(اختياري)</span>
