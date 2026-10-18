@@ -210,3 +210,38 @@ html:not(.dark) .developer-credit {
 html:not(.dark) .developer-credit:hover {
   color: #007AFF;
 }
+
+
+/* EURO visual cleanup: consistent surfaces and crisp actions in both themes */
+.card, .account-card, .account-modal, article[class*="rounded-"] {
+  box-shadow: none !important;
+}
+.btn, button.bg-gradient-to-b, button.bg-gradient-to-r {
+  opacity: 1;
+  filter: none;
+  box-shadow: none !important;
+}
+html.dark .card, html.dark .account-card, html.dark article[class*="rounded-"] {
+  background-color: #0D111B !important;
+  border-color: #252C3A !important;
+  box-shadow: none !important;
+}
+html:not(.dark) .card, html:not(.dark) .account-card, html:not(.dark) article[class*="rounded-"] {
+  background: #FFFFFF !important;
+  border-color: #D7DFEA !important;
+  box-shadow: none !important;
+}
+html.dark button.bg-gradient-to-b, html.dark button.bg-gradient-to-r {
+  background: #087CFA !important;
+  color: #FFFFFF !important;
+  border: 1px solid #087CFA !important;
+  box-shadow: none !important;
+}
+html:not(.dark) button.bg-gradient-to-b, html:not(.dark) button.bg-gradient-to-r {
+  background: #006BE6 !important;
+  color: #FFFFFF !important;
+  border: 1px solid #006BE6 !important;
+  box-shadow: none !important;
+}
+html.dark .account-modal { background: #101521 !important; border-color: #2A3242 !important; }
+html:not(.dark) .account-modal { background: #FFFFFF !important; border-color: #D7DFEA !important; }
