@@ -64,7 +64,7 @@ async function verifySession(token?: string): Promise<Session | null> {
       typeof payload.phone !== "string" ||
       typeof payload.iat !== "number" ||
       !Number.isFinite(payload.iat) ||
-      now - payload.iat > 7 * 24 * 60 * 60 * 1000 ||
+      now - payload.iat > 30 * 24 * 60 * 60 * 1000 ||
       payload.iat <= 0 ||
       payload.iat > now + 60_000
     ) {
@@ -89,15 +89,29 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
-  if (
+  const isLogin = pathname === "/login";
+  const isProtectedPage =
+    pathname === "/" ||
+    pathname === "/cart" ||
+    pathname.startsWith("/cart/") ||
+    pathname === "/special" ||
+    pathname.startsWith("/special/") ||
+    pathname === "/account" ||
+    pathname.startsWith("/account/") ||
     pathname === "/workshop" ||
     pathname.startsWith("/workshop/") ||
     pathname === "/marketer" ||
-    pathname.startsWith("/marketer/")
-  ) {
+    pathname.startsWith("/marketer/");
+
+  if (isLogin || isProtectedPage) {
     const token = req.cookies.get("euro_session")?.value;
     const session = await verifySession(token);
 
+    if (isLogin && session) {
+      return NextResponse.redirect(new URL("/account", req.url));
+    }
+
+    if (isProtectedPage) {
     if (!session) {
       const loginUrl = new URL("/login", req.url);
       loginUrl.searchParams.set("next", pathname);
@@ -124,6 +138,14 @@ export async function middleware(req: NextRequest) {
 
 export const config = {
   matcher: [
+    "/",
+    "/login",
+    "/cart",
+    "/cart/:path*",
+    "/special",
+    "/special/:path*",
+    "/account",
+    "/account/:path*",
     "/workshop",
     "/workshop/:path*",
     "/marketer",
