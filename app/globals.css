@@ -210,3 +210,46 @@ html:not(.dark) .developer-credit {
 html:not(.dark) .developer-credit:hover {
   color: #007AFF;
 }
+
+
+/* Account page: explicit, theme-aware surfaces and a high-contrast save action */
+html.dark .account-card {
+  background: #0D111B !important;
+  background-image: none !important;
+  border-color: #293244 !important;
+  box-shadow: none !important;
+}
+html:not(.dark) .account-card {
+  background: #FFFFFF !important;
+  background-image: none !important;
+  border-color: #D5DEEA !important;
+  box-shadow: none !important;
+}
+.account-save-button {
+  background: #087CFA !important;
+  background-image: none !important;
+  border: 1px solid #087CFA !important;
+  color: #FFFFFF !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+.account-save-button:hover:not(:disabled) {
+  background: #006BE6 !important;
+}
+.account-save-button:disabled {
+  background: #64748B !important;
+  border-color: #64748B !important;
+  color: #FFFFFF !important;
+}
+html.dark .account-modal {
+  background: #101521 !important;
+  background-image: none !important;
+  border-color: #2A3242 !important;
+  color: #F8FAFC !important;
+}
+html:not(.dark) .account-modal {
+  background: #FFFFFF !important;
+  background-image: none !important;
+  border-color: #D7DFEA !important;
+  color: #0F172A !important;
+}
