@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Search, Plus, ScanLine } from "lucide-react";
 import { BRANDS, PARTS, usd } from "@/lib/data";
@@ -8,6 +9,7 @@ import { useCart } from "@/components/cart";
 import { H } from "@/components/ui";
 
 export default function Home() {
+  const router = useRouter();
   const [q, setQ] = useState("");
   const [b, setB] = useState("");
   const { add } = useCart();
@@ -69,16 +71,18 @@ export default function Home() {
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         {r.map((p) => (
-          <div
+          <article
             key={p.id}
-            className="flex flex-col gap-1 rounded-[24px] border border-white/[0.14] bg-gradient-to-b from-white/[0.09] to-white/[0.03] p-4 backdrop-blur-2xl saturate-150 shadow-[0_10px_32px_rgba(0,0,0,0.45),inset_0_1px_0_0_rgba(255,255,255,0.25)] transition-all duration-300"
+            role="link"
+            tabIndex={0}
+            aria-label={"عرض تفاصيل " + p.name}
+            onClick={() => router.push("/product/" + p.id)}
+            onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push("/product/" + p.id); } }}
+            className="flex cursor-pointer flex-col gap-1 rounded-[24px] border border-white/[0.14] bg-gradient-to-b from-white/[0.09] to-white/[0.03] p-4 backdrop-blur-2xl transition-colors duration-200 hover:border-[#0A84FF]/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0A84FF]"
           >
             <span className="text-xs font-medium text-[#0A84FF]">
               {p.brand}
             </span>
-            <b className="font-semibold tracking-tight text-white">
-              {p.name}
-            </b>
 
             <code className="text-xs text-white/45" dir="ltr">
               {p.pn}
@@ -92,7 +96,7 @@ export default function Home() {
               {p.stock ? (
                 <button
                   className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-b from-[#3A9BFD] to-[#007AFF] px-3 py-2 text-sm font-semibold text-white shadow-[0_4px_20px_rgba(0,122,255,0.45),inset_0_1px_1px_rgba(255,255,255,0.45)] transition-all hover:brightness-110 active:scale-[0.97]"
-                  onClick={() => add(p.id)}
+                  onClick={(e) => { e.stopPropagation(); add(p.id); }}
                 >
                   <Plus size={16} />
                   أضف للسلة
@@ -106,7 +110,8 @@ export default function Home() {
                 </Link>
               )}
             </div>
-          </div>
+            <span className="mt-2 text-xs text-white/55">اضغط لعرض التفاصيل والتوافق</span>
+          </article>
         ))}
       </div>
 
