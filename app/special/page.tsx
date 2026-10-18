@@ -104,20 +104,20 @@ export default function Special(){
 
       <label className="flex h-44 cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border-2 border-dashed border-white/[0.16] bg-black/35 text-sm text-white/65 backdrop-blur-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all hover:border-[#0A84FF] hover:text-white">
         {img
-          ? <img src={img} alt="معاينة صورة القطعة" className="h-full w-full object-cover"/>
-          : <><Camera className="text-[#0A84FF]"/>صوّر القطعة القديمة أو دفتر الميكانيك/الشاصي</>
+          ? <img src={img} alt="معاينة صورة القطعة" className="h-full w-full object-contain"/>
+          : <><Camera className="text-[#0A84FF]"/>التقط صورة أو اختر صورة من المعرض</>
         }
         <input
           type="file"
           accept="image/*"
-          capture="environment"
           hidden
           onChange={e=>{
             const f = e.target.files?.[0];
-            if(f) setImg(URL.createObjectURL(f));
+            if (f && f.type.startsWith("image/")) setImg(URL.createObjectURL(f));
           }}
         />
       </label>
+      <p className="-mt-3 text-xs text-white/55">يمكنك اختيار صورة محفوظة على الهاتف أو التقاط صورة جديدة من واجهة اختيار الصور.</p>
 
       <button className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#3A9BFD] to-[#007AFF] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_4px_20px_rgba(0,122,255,0.45),inset_0_1px_1px_rgba(255,255,255,0.45)] transition-all hover:brightness-110 active:scale-[0.97]">إرسال الطلب</button>
     </form>
