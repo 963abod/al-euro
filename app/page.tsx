@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Search, Plus, ScanLine } from "lucide-react";
@@ -16,6 +16,16 @@ export default function Home() {
 
   const vin = q.trim().length === 17;
   const s = q.trim().toLowerCase();
+
+  useEffect(() => {
+    if (vin) {
+      try {
+        localStorage.setItem("euro_vin", q.trim());
+      } catch {
+        // Ignore localStorage access errors
+      }
+    }
+  }, [vin, q]);
 
   const r = PARTS.filter(
     (x) =>
@@ -80,6 +90,7 @@ export default function Home() {
             onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); router.push("/product/" + p.id); } }}
             className="flex cursor-pointer flex-col gap-1 rounded-[24px] border border-white/[0.14] bg-gradient-to-b from-white/[0.09] to-white/[0.03] p-4 backdrop-blur-2xl transition-colors duration-200 hover:border-[#0A84FF]/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0A84FF]"
           >
+            <h3 className="text-base font-semibold text-white">{p.name}</h3>
 
             <code className="text-xs text-white/45" dir="ltr">
               {p.pn}

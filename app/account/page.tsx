@@ -101,8 +101,8 @@ export default function AccountPage() {
     const scaledHeight = drawHeight * cropZoom;
     const maxX = Math.max(0, (scaledWidth - 400) / 2);
     const maxY = Math.max(0, (scaledHeight - 400) / 2);
-    const dx = (400 - scaledWidth) / 2 + cropOffsetX * maxX;
-    const dy = (400 - scaledHeight) / 2 + cropOffsetY * maxY;
+    const dx = (400 - scaledWidth) / 2 + cropOffsetX * 100;
+    const dy = (400 - scaledHeight) / 2 + cropOffsetY * 100;
     context.fillStyle = "#171a22";
     context.fillRect(0, 0, 400, 400);
     context.drawImage(image, dx, dy, scaledWidth, scaledHeight);
@@ -200,7 +200,7 @@ export default function AccountPage() {
     <div className="mx-auto max-w-3xl space-y-4 pb-4">
       <H t="ملفي الشخصي" s="إدارة بيانات حسابك وإعدادات الأمان" />
 
-      <section className="account-card overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-br from-[#0A84FF]/20 via-white/[0.06] to-white/[0.02] p-5 shadow-[0_18px_55px_rgba(0,0,0,.25)]">
+      <section className="overflow-hidden rounded-[28px] border border-white/10 bg-gradient-to-br from-[#0A84FF]/20 via-white/[0.06] to-white/[0.02] p-5 shadow-[0_18px_55px_rgba(0,0,0,.25)]">
         <div className="flex items-center gap-4">
           <div className="relative h-20 w-20 shrink-0">
             <div className="grid h-20 w-20 place-items-center overflow-hidden rounded-[26px] border border-white/20 bg-white/10 text-2xl font-black text-white shadow-inner">
@@ -228,7 +228,7 @@ export default function AccountPage() {
           <strong className="text-2xl">—</strong>
           <p className="mt-1 text-xs leading-5 text-white/45">سجل الطلبات غير متاح بعد؛ الحفظ الدائم للطلبات غير مفعّل في النظام الحالي.</p>
         </div>
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+        <div className="account-card rounded-2xl border border-white/10 bg-white/[0.04] p-4">
           <div className="mb-2 flex items-center gap-2 text-sm text-white/55">{isWorkshop ? <Wallet size={17}/> : <ShieldCheck size={17}/>} {isWorkshop ? "سقف دفتر الدين" : "كود المسوّق"}</div>
           <strong className="break-all text-2xl text-[#0A84FF]">{isWorkshop ? (user.debt_limit == null ? "غير محدد" : `$${Number(user.debt_limit).toLocaleString("en-US")}`) : (user.my_ref_code || "غير متوفر")}</strong>
           {isWorkshop && <p className="mt-1 text-xs text-white/45">الرصيد المستخدم: {user.debt_balance == null ? "غير متوفر" : `$${Number(user.debt_balance).toLocaleString("en-US")}`}</p>}

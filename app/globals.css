@@ -214,14 +214,12 @@ html:not(.dark) .developer-credit:hover {
 
 /* Account page: explicit, theme-aware surfaces and a high-contrast save action */
 html.dark .account-card {
-  background: #0D111B !important;
-  background-image: none !important;
+  background-color: #0D111B !important;
   border-color: #293244 !important;
   box-shadow: none !important;
 }
 html:not(.dark) .account-card {
-  background: #FFFFFF !important;
-  background-image: none !important;
+  background-color: #FFFFFF !important;
   border-color: #D5DEEA !important;
   box-shadow: none !important;
 }

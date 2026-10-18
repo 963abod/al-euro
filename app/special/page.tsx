@@ -1,6 +1,6 @@
 "use client";
 
-import {useState} from "react";
+import {useState, useEffect} from "react";
 import {Camera, CheckCircle2} from "lucide-react";
 import {BRANDS, PARTS} from "@/lib/data";
 import {H} from "@/components/ui";
@@ -11,7 +11,18 @@ export default function Special(){
   const [selectedBrand, setSelectedBrand] = useState(BRANDS[0] || "Mercedes-Benz");
   const [otherBrand, setOtherBrand] = useState("");
   const [partName, setPartName] = useState("");
+  const [vinPn, setVinPn] = useState("");
+  const [notes, setNotes] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(false);
+
+  useEffect(() => {
+    try {
+      const savedVin = localStorage.getItem("euro_vin");
+      if (savedVin) setVinPn(savedVin);
+    } catch {
+      // Ignore localStorage access errors
+    }
+  }, []);
 
   // اقتراح أسماء القطع الموجودة في بيانات المخزون أثناء الكتابة
   const suggestions = Array.from(new Set(
@@ -24,7 +35,7 @@ export default function Special(){
     <CheckCircle2 className="mx-auto mb-3 text-[#30D158]" size={48}/>
     <h2 className="text-xl font-semibold tracking-tight text-white">وصلنا طلبك</h2>
     <p className="mt-1 text-sm text-white/65">سنؤمّن القطعة ونرسل لك السعر.</p>
-    <button className="mt-4 inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#3A9BFD] to-[#007AFF] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_4px_20px_rgba(0,122,255,0.45),inset_0_1px_1px_rgba(255,255,255,0.45)] transition-all hover:brightness-110 active:scale-[0.97]" onClick={()=>{setOk(false); setImg(""); setPartName(""); setOtherBrand(""); setShowSuggestions(false); setSelectedBrand(BRANDS[0] || "Mercedes-Benz");}}>طلب جديد</button>
+    <button className="mt-4 inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#3A9BFD] to-[#007AFF] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_4px_20px_rgba(0,122,255,0.45),inset_0_1px_1px_rgba(255,255,255,0.45)] transition-all hover:brightness-110 active:scale-[0.97]" onClick={()=>{setOk(false); setImg(""); setPartName(""); setOtherBrand(""); setVinPn(""); setNotes(""); setShowSuggestions(false); setSelectedBrand(BRANDS[0] || "Mercedes-Benz");}}>طلب جديد</button>
   </div>;
 
   return(<>
@@ -98,9 +109,9 @@ export default function Special(){
         )}
       </div>
 
-      <input className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25" dir="ltr" placeholder="رقم القطعة أو رقم الشاصي (VIN)"/>
+      <input value={vinPn} onChange={e=>setVinPn(e.target.value)} className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25" dir="ltr" placeholder="رقم القطعة أو رقم الشاصي (VIN)"/>
 
-      <textarea className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25" rows={3} placeholder="ملاحظات: الموديل، السنة، المحرك…"/>
+      <textarea value={notes} onChange={e=>setNotes(e.target.value)} className="w-full rounded-2xl border border-white/[0.10] bg-black/35 px-3 py-2.5 text-sm text-white outline-none backdrop-blur-xl placeholder:text-white/40 shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all focus:border-[#0A84FF] focus:ring-2 focus:ring-[#0A84FF]/25" rows={3} placeholder="ملاحظات: الموديل، السنة، المحرك…"/>
 
       <label className="flex h-44 cursor-pointer flex-col items-center justify-center gap-2 overflow-hidden rounded-2xl border-2 border-dashed border-white/[0.16] bg-black/35 text-sm text-white/65 backdrop-blur-xl shadow-[inset_0_2px_4px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.1)] transition-all hover:border-[#0A84FF] hover:text-white">
         {img
@@ -113,6 +124,7 @@ export default function Special(){
           hidden
           onChange={e=>{
             const f = e.target.files?.[0];
+            e.target.value = "";
             if (f && f.type.startsWith("image/")) setImg(URL.createObjectURL(f));
           }}
         />
