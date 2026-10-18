@@ -83,21 +83,26 @@ export default function AccountPage() {
   function saveCroppedAvatar() {
     if (!pendingAvatar || !user || !cropImageRef.current) return;
     const image = cropImageRef.current;
-    const size = Math.min(image.naturalWidth, image.naturalHeight);
-    const cropSize = size / cropZoom;
-    const maxX = (image.naturalWidth - cropSize) / 2;
-    const maxY = (image.naturalHeight - cropSize) / 2;
-    const sx = Math.max(0, Math.min(image.naturalWidth - cropSize, maxX + cropOffsetX * maxX));
-    const sy = Math.max(0, Math.min(image.naturalHeight - cropSize, maxY + cropOffsetY * maxY));
     const canvas = document.createElement("canvas");
     canvas.width = 400;
     canvas.height = 400;
     const context = canvas.getContext("2d");
     if (!context) { setError("تعذر تجهيز الصورة."); return; }
-    context.drawImage(image, sx, sy, cropSize, cropSize, 0, 0, 400, 400);
-    const cropped = canvas.toDataURL("image/jpeg", 0.88);
+    const baseScale = Math.min(400 / image.naturalWidth, 400 / image.naturalHeight);
+    const drawWidth = image.naturalWidth * baseScale;
+    const drawHeight = image.naturalHeight * baseScale;
+    const scaledWidth = drawWidth * cropZoom;
+    const scaledHeight = drawHeight * cropZoom;
+    const maxX = Math.max(0, (scaledWidth - 400) / 2);
+    const maxY = Math.max(0, (scaledHeight - 400) / 2);
+    const dx = (400 - scaledWidth) / 2 - cropOffsetX * maxX;
+    const dy = (400 - scaledHeight) / 2 - cropOffsetY * maxY;
+    context.fillStyle = "#171a22";
+    context.fillRect(0, 0, 400, 400);
+    context.drawImage(image, dx, dy, scaledWidth, scaledHeight);
+    const cropped = canvas.toDataURL("image/jpeg", 0.9);
     try {
-      localStorage.setItem(`euro_avatar_${user.id}`, cropped);
+      localStorage.setItem("euro_avatar_" + user.id, cropped);
       setAvatar(cropped);
       setPendingAvatar("");
       setNotice("تم حفظ الصورة على هذا الجهاز.");
@@ -176,7 +181,7 @@ export default function AccountPage() {
         <div className="flex items-center gap-4">
           <div className="relative h-20 w-20 shrink-0">
             <div className="grid h-20 w-20 place-items-center overflow-hidden rounded-[26px] border border-white/20 bg-white/10 text-2xl font-black text-white shadow-inner">
-              {avatar ? <img src={avatar} alt="صورة الحساب" className="h-full w-full object-cover" /> : (initials || <UserRound size={30} />)}
+              {avatar ? <img src={avatar} alt="صورة الحساب" className="h-full w-full object-contain" /> : (initials || <UserRound size={30} />)}
             </div>
             <label className="absolute -bottom-2 -end-2 grid h-8 w-8 cursor-pointer place-items-center rounded-full border-2 border-[#06080E] bg-[#0A84FF] text-white" title="تغيير صورة الحساب">
               <UserRound size={15} />
@@ -268,11 +273,11 @@ export default function AccountPage() {
                 src={pendingAvatar}
                 alt="معاينة الصورة قبل الحفظ"
                 draggable={false}
-                className="pointer-events-none h-full w-full select-none object-cover"
+                className="pointer-events-none h-full w-full select-none object-contain"
                 style={{ transform: `translate(${cropOffsetX * 25}%, ${cropOffsetY * 25}%) scale(${cropZoom})` }}
               />
             </div>
-            <p className="mb-4 text-center text-xs text-white/60">اسحب الصورة بإصبعك داخل الدائرة لضبط موضع الوجه.</p>
+            <p className="mb-4 text-center text-xs text-white/60">اسحب الصورة بإصبعك لتغيير موضعها، واستخدم التكبير لتقريبها. ستبقى أطراف الصورة ظاهرة قدر الإمكان.</p>
             <label className="mb-3 block space-y-2 text-sm">
               <span className="flex justify-between"><span>تكبير الصورة</span><span>{cropZoom.toFixed(1)}×</span></span>
               <input type="range" min="1" max="3" step="0.1" value={cropZoom} onChange={(e) => setCropZoom(Number(e.target.value))} className="w-full accent-[#0A84FF]" />
