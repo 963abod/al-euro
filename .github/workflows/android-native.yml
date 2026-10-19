@@ -44,7 +44,7 @@ jobs:
           import re
           p = Path("android/app/build.gradle")
           s = p.read_text()
-          pattern = r'(defaultConfig\s*\{)'
+          pattern = r"(defaultConfig\s*\{)"
           replacement = r'\1\n        ndk { abiFilters "armeabi-v7a", "arm64-v8a" }'
           s, count = re.subn(pattern, replacement, s, count=1)
           if count != 1:
@@ -64,26 +64,12 @@ jobs:
           APKSIGNER="$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -n 1)"
           test -x "$APKSIGNER"
           "$APKSIGNER" verify --verbose "$APK"
+          LIB_ABIS="$(unzip -Z1 "$APK" | awk -F/ '$1=="lib" && substr($3,length($3)-2)==".so" {print $2}' | sort -u)"
           echo "Native library architectures:"
-          unzip -Z1 "$APK" | grep -E '^lib/[^/]+/[^/]+\.so$' | cut -d/ -f2 | sort -u
-          LIB_ABIS="$(unzip -Z1 "$APK" | grep -E '^lib/[^/]+/[^/]+\.so
-      - uses: actions/upload-artifact@v4
-        with:
-          name: euro-cars-android-apk
-          path: mobile/android/app/build/outputs/apk/release/app-release.apk
-          if-no-files-found: error
-          retention-days: 14
- | cut -d/ -f2 | sort -u)"
-          echo "$LIB_ABIS" | grep -qx 'arm64-v8a'
-          echo "$LIB_ABIS" | grep -qx 'armeabi-v7a'
-          if echo "$LIB_ABIS" | grep -Eq '^(x86|x86_64)
-      - uses: actions/upload-artifact@v4
-        with:
-          name: euro-cars-android-apk
-          path: mobile/android/app/build/outputs/apk/release/app-release.apk
-          if-no-files-found: error
-          retention-days: 14
-; then
+          echo "$LIB_ABIS"
+          echo "$LIB_ABIS" | grep -qx "arm64-v8a"
+          echo "$LIB_ABIS" | grep -qx "armeabi-v7a"
+          if echo "$LIB_ABIS" | grep -Eq "^(x86|x86_64)$"; then
             echo "Unexpected x86 ABI found in APK" >&2
             exit 1
           fi
