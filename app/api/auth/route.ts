@@ -9,6 +9,7 @@ import {
   safeEqual,
   setSession,
   verifySession,
+  signSession,
 } from "@/lib/session";
 import { cookies } from "next/headers";
 
@@ -60,10 +61,11 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { mode = "login", role, name, phone, password, license, city, spec, refCode, refSignature } = body ?? {};
+    const { mode = "login", role, name, phone, password, license, city, spec, refCode, refSignature, client } = body ?? {};
+    const isMobileClient = client === "mobile";
 
     // "admin" accounts can only sign in; they are created / promoted manually in the database.
-    const allowedRoles = mode === "login" ? ["workshop", "marketer", "admin"] : ["workshop", "marketer"];
+    const allowedRoles = mode === "login" ? (isMobileClient ? ["workshop", "marketer"] : ["workshop", "marketer", "admin"]) : ["workshop", "marketer"];
     if (!["login", "register"].includes(mode) || !allowedRoles.includes(role)) {
       return json({ error: "نوع العملية أو الحساب غير صالح" }, 400);
     }
@@ -104,7 +106,8 @@ export async function POST(req: Request) {
       });
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password_hash: _omit, ...publicUser } = existingUser;
-      return json({ ok: true, user: publicUser });
+      const accessToken = isMobileClient ? signSession({ id: String(existingUser.id), role: existingUser.role, name: existingUser.name, phone: existingUser.phone, my_ref_code: existingUser.my_ref_code, iat: Date.now() }) : undefined;
+      return json({ ok: true, user: publicUser, ...(accessToken ? { accessToken } : {}) });
     }
 
     if (existingUser) return json({ error: "هذا الرقم مسجل مسبقاً بنفس نوع الحساب." }, 400);
@@ -190,7 +193,8 @@ export async function POST(req: Request) {
       phone: newUser.phone,
       my_ref_code: newUser.my_ref_code,
     });
-    return json({ ok: true, user: newUser });
+    const accessToken = isMobileClient ? signSession({ id: String(newUser.id), role: newUser.role, name: newUser.name, phone: newUser.phone, my_ref_code: newUser.my_ref_code, iat: Date.now() }) : undefined;
+    return json({ ok: true, user: newUser, ...(accessToken ? { accessToken } : {}) });
   } catch (err) {
     return serverError("POST", err);
   }
