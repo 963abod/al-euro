@@ -73,6 +73,11 @@ export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const session = await verifySession(req.cookies.get("euro_session")?.value);
 
+  // Public recovery endpoints must remain reachable without an admin session.
+  if (pathname === "/admin/reset-password" || pathname === "/api/password-reset/admin") {
+    return NextResponse.next();
+  }
+
   // ---- Admin API: early gate (each route still calls requireAdmin(), which also checks the database) ----
   if (isUnder(pathname, "/api/admin")) {
     if (!session) return NextResponse.json({ error: "يرجى تسجيل الدخول" }, { status: 401 });
