@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 export const COOKIE_NAME = "euro_session";
 export const SESSION_AGE = 60 * 60 * 24 * 30; // seconds
@@ -68,9 +68,13 @@ export function verifySession(token: string | undefined | null): Session | null 
   }
 }
 
-/** Reads and verifies the session cookie of the current request (Route Handlers / Server Components). */
+/** Reads a signed session from the browser cookie or native-app Bearer header. */
 export function getSession(): Session | null {
-  return verifySession(cookies().get(COOKIE_NAME)?.value);
+  const cookieToken = cookies().get(COOKIE_NAME)?.value;
+  if (cookieToken) return verifySession(cookieToken);
+  const authorization = headers().get("authorization") || "";
+  const match = authorization.match(/^Bearer\s+(.+)$/i);
+  return verifySession(match?.[1] ?? null);
 }
 
 export function setSession(session: Omit<Session, "iat">) {
