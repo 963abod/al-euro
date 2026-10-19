@@ -60,7 +60,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { mode = "login", role, name, phone, password, license, city, spec, refCode } = body ?? {};
+    const { mode = "login", role, name, phone, password, license, city, spec, refCode, refSignature } = body ?? {};
 
     // "admin" accounts can only sign in; they are created / promoted manually in the database.
     const allowedRoles = mode === "login" ? ["workshop", "marketer", "admin"] : ["workshop", "marketer"];
@@ -117,6 +117,27 @@ export async function POST(req: Request) {
       ? String(spec).split(/[,،]/).map((s: string) => s.trim()).filter(Boolean)
       : [];
 
+    // Referral attribution is validated on the server. Signed invitation links cannot be
+    // changed to another marketer's code without invalidating the signature.
+    let validatedReferralCode: string | null = null;
+    if (role === "workshop" && typeof refCode === "string" && refCode.trim()) {
+      const candidateCode = refCode.trim().slice(0, 80);
+      if (typeof refSignature === "string" && refSignature.trim()) {
+        const expectedSignature = crypto.createHmac("sha256", process.env.AUTH_SECRET || "")
+          .update(`workshop-referral:${candidateCode}`).digest("hex");
+        if (!safeEqual(expectedSignature, refSignature.trim())) {
+          return json({ error: "كود الإحالة مثبت من رابط المسوّق ولا يمكن تغييره" }, 400);
+        }
+      }
+      const { data: referrer, error: referralError } = await db.from("users")
+        .select("id").eq("role", "marketer").eq("my_ref_code", candidateCode).eq("is_active", true).maybeSingle();
+      if (referralError) return serverError("referral lookup", referralError, "تعذر التحقق من كود الإحالة");
+      if (!referrer) return json({ error: "كود الإحالة غير صحيح أو حساب المسوّق غير مفعّل" }, 400);
+      validatedReferralCode = candidateCode;
+    } else if (role === "workshop" && typeof refSignature === "string" && refSignature.trim()) {
+      return json({ error: "رابط الإحالة غير مكتمل؛ افتح رابط المسوّق من جديد" }, 400);
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let newUser: any = null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -136,7 +157,7 @@ export async function POST(req: Request) {
         city: city ? String(city).trim() : null,
         specs: specsArray,
         my_ref_code: generatedRefCode,
-        referred_by_code: role === "workshop" && refCode ? String(refCode).trim() : null,
+        referred_by_code: validatedReferralCode,
         is_active: role !== "workshop",
       }).select(USER_FIELDS).single();
 
