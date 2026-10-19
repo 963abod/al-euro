@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Wrench, Share2, CheckCircle2, Clock, LogIn, UserPlus, ShieldCheck, ChevronDown } from "lucide-react";
 
 const SYRIAN_CITIES = [
@@ -42,6 +42,15 @@ export default function LoginPage() {
   const [selectedBrands, setSelectedBrands] = useState<string[]>(["Mercedes-Benz"]);
   const [otherBrandText, setOtherBrandText] = useState("");
   const [refCode, setRefCode] = useState("");
+
+  useEffect(() => {
+    const invitedBy = new URLSearchParams(window.location.search).get("ref");
+    if (invitedBy?.trim()) {
+      setRefCode(invitedBy.trim().slice(0, 80));
+      setAuthMode("register");
+      setRole("workshop");
+    }
+  }, []);
 
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
