@@ -32,11 +32,13 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-      - name: Build APK
-        run: cd android && chmod +x gradlew && ./gradlew assembleDebug
+      - name: Limit APK to real phone architectures
+        run: echo 'reactNativeArchitectures=arm64-v8a,armeabi-v7a' >> android/gradle.properties
+      - name: Build optimized APK
+        run: cd android && chmod +x gradlew && ./gradlew assembleRelease
       - uses: actions/upload-artifact@v4
         with:
           name: euro-cars-android-apk
-          path: mobile/android/app/build/outputs/apk/debug/app-debug.apk
+          path: mobile/android/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
           retention-days: 14
