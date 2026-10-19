@@ -32,10 +32,28 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
-      - name: Limit APK to real phone architectures
-        run: echo 'reactNativeArchitectures=arm64-v8a,armeabi-v7a' >> android/gradle.properties
+      - name: Limit APK to modern Android phone architecture
+        run: echo 'reactNativeArchitectures=arm64-v8a' >> android/gradle.properties
       - name: Build optimized APK
         run: cd android && chmod +x gradlew && ./gradlew assembleRelease
+      - name: Verify APK integrity and signing
+        run: |
+          APK=android/app/build/outputs/apk/release/app-release.apk
+          test -s "$APK"
+          unzip -t "$APK"
+          apksigner verify --verbose "$APK"
+          echo 'Native libraries included:'
+          unzip -Z1 "$APK" | grep '^lib/[^/]*/.*\.so      - uses: actions/upload-artifact@v4
+        with:
+          name: euro-cars-android-apk
+          path: mobile/android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 14
+ | cut -d/ -f2 | sort -u
+          if unzip -Z1 "$APK" | grep -Eq '^lib/(x86|x86_64|armeabi-v7a)/'; then
+            echo 'Unexpected ABI found in APK' >&2
+            exit 1
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: euro-cars-android-apk
