@@ -1,4 +1,7 @@
 name: Build EURO Native Android App
+concurrency:
+  group: euro-native-${{ github.ref }}
+  cancel-in-progress: true
 on:
   workflow_dispatch:
   push:
