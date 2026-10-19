@@ -254,8 +254,8 @@ begin
   return jsonb_build_object('ok', true, 'order_id', o.id, 'order_number', o.order_number, 'status', p_new_status);
 end $$;
 
--- 4.2) Record a debt repayment: users.debt_balance -= amount, 'payment' ledger row,
---      and every 'held' commission of that workshop becomes 'available'.
+-- 4.2) Record a debt repayment: users.debt_balance -= amount and add a 'payment' ledger row.
+--      Held commissions become available only when the workshop's debt balance reaches zero.
 create or replace function public.admin_record_debt_payment(
   p_workshop_id uuid,
   p_amount      numeric,
@@ -269,7 +269,7 @@ declare
   u        public.users%rowtype;
   v_amount numeric := round(coalesce(p_amount, 0), 2);
   v_bal    numeric;
-  v_rel    int;
+  v_rel    int := 0;
 begin
   if v_amount <= 0 then raise exception 'مبلغ التسديد يجب أن يكون أكبر من صفر'; end if;
 
@@ -279,17 +279,24 @@ begin
     raise exception 'مبلغ التسديد أكبر من الدين المستحق (%)', coalesce(u.debt_balance, 0);
   end if;
 
-  v_bal := coalesce(u.debt_balance, 0) - v_amount;
+  v_bal := round(coalesce(u.debt_balance, 0) - v_amount, 2);
   update public.users set debt_balance = v_bal where id = u.id;
 
   insert into public.debt_ledger (workshop_id, order_id, tx_type, amount, balance_after, note)
   values (u.id, null, 'payment', v_amount, v_bal, coalesce(nullif(btrim(coalesce(p_note, '')), ''), 'تسديد دفعة'));
 
-  update public.marketer_commissions set status = 'available'
-   where workshop_id = u.id and status = 'held';
-  get diagnostics v_rel = row_count;
+  -- Commissions from debt orders remain held until this workshop's entire balance reaches zero.
+  if v_bal = 0 then
+    update public.marketer_commissions set status = 'available'
+     where workshop_id = u.id and status = 'held';
+    get diagnostics v_rel = row_count;
+  end if;
 
-  return jsonb_build_object('ok', true, 'balance_after', v_bal, 'released_commissions', v_rel);
+  return jsonb_build_object(
+    'ok', true,
+    'balance_after', v_bal,
+    'released_commissions', v_rel
+  );
 end $$;
 
 -- 4.3) Mark commissions as paid (only rows that are currently 'available').
