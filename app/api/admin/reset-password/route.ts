@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import crypto from "crypto";
 import { getSupabaseAdmin } from "@/lib/supabase";
 import { hashPassword, safeEqual } from "@/lib/session";
 
@@ -59,7 +58,6 @@ export async function POST(req: Request) {
       return json({ error: "تعذر تحديث كلمة المرور." }, 500);
     }
 
-    // Remove ADMIN_PASSWORD_RESET_TOKEN from Render immediately after successful use.
     return json({ ok: true, message: "تم تغيير كلمة المرور. احذف ADMIN_PASSWORD_RESET_TOKEN من Render الآن، ثم سجّل الدخول." });
   } catch (error) {
     console.error("[admin-password-reset] request failed:", error);
