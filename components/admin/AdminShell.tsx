@@ -24,7 +24,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const path = usePathname() || "";
   const { theme, setTheme } = useTheme();
   const [overview, setOverview] = useState<Overview | null>(null);
-  const bare = path === "/admin/login" || path.endsWith("/print");
+  const bare = path === "/admin/login" || path === "/admin/reset-password" || path.endsWith("/print");
 
   const refresh = useCallback(async () => {
     const r = await api<{ overview: Overview }>("/api/admin/overview");
