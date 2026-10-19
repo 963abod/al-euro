@@ -1,7 +1,8 @@
 import React, {useEffect,useState} from "react";
 import {ActivityIndicator,Alert,FlatList,SafeAreaView,ScrollView,StatusBar,StyleSheet,Text,TextInput,TouchableOpacity,View} from "react-native";
 import * as SecureStore from "expo-secure-store";
-const API=(process.env.EXPO_PUBLIC_API_URL||"https://al-euro-cdzo.onrender.com").replace(/\/$/,"");\nconst BRANDS=["Mercedes-Benz","BMW","Audi","Range Rover","Volkswagen","أخرى"];
+const API=(process.env.EXPO_PUBLIC_API_URL||"https://al-euro-cdzo.onrender.com").replace(/\/$/,"");
+const BRANDS=["Mercedes-Benz","BMW","Audi","Range Rover","Volkswagen","أخرى"];
 const C={bg:"#07090E",panel:"#11151E",line:"#293141",blue:"#0A84FF",red:"#8D2637",text:"#F5F7FA",muted:"#9AA6B7",green:"#30D158"};
 type User={id:string;role:"workshop"|"marketer";name:string;phone:string};
 type Part={id:string;name:string;brand:string;pn:string;price:number;stock:number;model:string};
