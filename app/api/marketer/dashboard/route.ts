@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 import { getSession } from "@/lib/session";
 import { getSupabaseAdmin } from "@/lib/supabase";
 
@@ -38,8 +39,11 @@ export async function GET() {
       else if (row.status === "held") totals.held += amount;
       else if (row.status === "paid") totals.paid += amount;
     }
+    const referralSignature = crypto.createHmac("sha256", process.env.AUTH_SECRET || "").update(`workshop-referral:${marketer.my_ref_code}`).digest("hex");
+    const origin = new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://al-euro-cdzo.onrender.com").origin;
+    const referralUrl = `${origin}/login?ref=${encodeURIComponent(marketer.my_ref_code)}&sig=${referralSignature}`;
     return reply({
-      marketer: { name: marketer.name, code: marketer.my_ref_code },
+      marketer: { name: marketer.name, code: marketer.my_ref_code, referralUrl },
       workshops: count ?? 0,
       commissions: {
         available: Math.round(totals.available * 100) / 100,
