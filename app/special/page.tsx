@@ -36,7 +36,9 @@ export default function Special(){
     const f = e.target.files?.[0];
     e.target.value = "";
     if (!f) return;
-    const looksLikeImage = f.type.startsWith("image/") || (!f.type && /\.(jpe?g|png|webp|heic|heif)$/i.test(f.name));
+    const allowedMime = ["image/jpeg", "image/png", "image/webp"];
+    const allowedExtension = /\.(jpe?g|png|webp)$/i.test(f.name);
+    const looksLikeImage = allowedMime.includes(f.type) || (!f.type && allowedExtension);
     if (!looksLikeImage) { setErr("اختر ملف صورة صالحاً."); return; }
     if (f.size > 5 * 1024 * 1024) { setErr("حجم الصورة يجب ألا يتجاوز 5 ميغابايت."); return; }
     setErr("");
@@ -176,7 +178,7 @@ export default function Special(){
         }
         <input
           type="file"
-          accept="image/*"
+          accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
           hidden
           onChange={pickImage}
         />
