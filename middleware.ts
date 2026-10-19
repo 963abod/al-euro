@@ -74,7 +74,7 @@ export async function middleware(req: NextRequest) {
   const session = await verifySession(req.cookies.get("euro_session")?.value);
 
   // Public recovery endpoints must remain reachable without an admin session.
-  if (pathname === "/admin/reset-password" || pathname === "/api/password-reset/admin" || pathname === "/api/admin/reset-password") {
+  if (isUnder(pathname, "/admin/reset-password") || isUnder(pathname, "/api/password-reset/admin") || isUnder(pathname, "/api/admin/reset-password")) {
     return NextResponse.next();
   }
 
