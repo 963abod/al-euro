@@ -5,7 +5,7 @@ import {usd} from "@/lib/data";
 import {H} from "@/components/ui";
 
 type Dashboard = {
-  marketer: { name: string; code: string };
+  marketer: { name: string; code: string; referralUrl: string };
   workshops: number;
   commissions: { available: number; held: number; paid: number; total: number };
 };
@@ -30,9 +30,7 @@ export default function M(){
     return () => { alive = false; };
   }, []);
 
-  const link = data?.marketer.code && typeof window !== "undefined"
-    ? `${window.location.origin}/login?ref=${encodeURIComponent(data.marketer.code)}`
-    : "";
+  const link = data?.marketer.referralUrl ?? "";
 
   return(
     <>
