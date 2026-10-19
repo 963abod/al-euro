@@ -42,11 +42,17 @@ export default function LoginPage() {
   const [selectedBrands, setSelectedBrands] = useState<string[]>(["Mercedes-Benz"]);
   const [otherBrandText, setOtherBrandText] = useState("");
   const [refCode, setRefCode] = useState("");
+  const [refSignature, setRefSignature] = useState("");
+  const [refLocked, setRefLocked] = useState(false);
 
   useEffect(() => {
-    const invitedBy = new URLSearchParams(window.location.search).get("ref");
-    if (invitedBy?.trim()) {
+    const params = new URLSearchParams(window.location.search);
+    const invitedBy = params.get("ref");
+    const signature = params.get("sig");
+    if (invitedBy?.trim() && signature?.trim()) {
       setRefCode(invitedBy.trim().slice(0, 80));
+      setRefSignature(signature.trim());
+      setRefLocked(true);
       setAuthMode("register");
       setRole("workshop");
     }
@@ -99,6 +105,7 @@ export default function LoginPage() {
           city,
           spec: finalSpecs,
           refCode,
+          refSignature: refLocked ? refSignature : "",
         }),
       });
       const data = await res.json();
@@ -519,8 +526,11 @@ export default function LoginPage() {
                   className="input"
                   placeholder="كود المسوّق إن وجد (اختياري)"
                   value={refCode}
-                  onChange={(e) => setRefCode(e.target.value)}
-                  style={{ background: "var(--field-bg)", borderRadius: 10, padding: "10px 12px", fontSize: 13 }}
+                  readOnly={refLocked}
+                  onChange={(e) => { if (!refLocked) setRefCode(e.target.value); }}
+                  aria-readonly={refLocked}
+                  title={refLocked ? "كود الإحالة مثبت من رابط المسوّق" : undefined}
+                  style={{ background: "var(--field-bg)", borderRadius: 10, padding: "10px 12px", fontSize: 13, opacity: refLocked ? 0.8 : 1, cursor: refLocked ? "not-allowed" : "text" }}
                 />
 
                 <div
